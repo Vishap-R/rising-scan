@@ -1,0 +1,89 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import mangas from '../../data/mangas.json';
+
+// Génération des pages statiques pour Vercel
+export function getStaticPaths() {
+  return mangas.map((manga) => ({
+    params: { id: manga.id },
+    props: { manga },
+  }));
+}
+
+const { manga } = Astro.props;
+const yellow = "#F9D71C";
+
+// On récupère le premier chapitre par défaut (ou on pourrait ajouter un paramètre [chapitre] plus tard)
+const currentChapter = manga.chapters[0];
+---
+
+<Layout title={`${manga.title} - Chapitre ${currentChapter.number}`}>
+  
+  <div class="bg-[#0b0b0b]/95 border-b border-zinc-800 p-3 sticky top-16 z-40 backdrop-blur-sm">
+    <div class="max-w-3xl mx-auto flex justify-between items-center px-4">
+      <div class="flex flex-col">
+        <span class="text-[10px] uppercase font-bold text-zinc-500 tracking-widest">Lecture en cours</span>
+        <h2 class="font-bold text-sm truncate w-40 sm:w-auto">
+           {manga.title} <span style={`color: ${yellow}`}>#Ch.{currentChapter.number}</span>
+        </h2>
+      </div>
+      
+      <div class="flex gap-3">
+        <select class="bg-zinc-900 border border-zinc-700 text-[10px] font-bold uppercase p-2 rounded outline-none focus:border-[#F9D71C] cursor-pointer">
+          {manga.chapters.map(ch => (
+            <option selected={ch.number === currentChapter.number}>
+              Chapitre {ch.number}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-4xl mx-auto flex flex-col items-center">
+    <div class="w-full flex flex-col bg-black">
+      {currentChapter.pages.map((page, index) => (
+        <div class="relative w-full border-b border-zinc-900/50">
+          <img 
+            src={page} 
+            loading="lazy" 
+            alt={`Page ${index + 1}`}
+            class="w-full h-auto block"
+            onerror="this.src='https://via.placeholder.com/800x1200?text=Image+Non+Trouvée'"
+          />
+          <div class="absolute bottom-4 right-4 bg-black/50 backdrop-blur-md px-2 py-1 rounded text-[10px] font-mono text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            {index + 1} / {currentChapter.pages.length}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="w-full py-20 px-4 text-center space-y-8 bg-gradient-to-b from-black to-[#0b0b0b]">
+      <div class="inline-block p-4 rounded-full bg-zinc-900 mb-4" style={`color: ${yellow}`}>
+        ⚡
+      </div>
+      <h3 class="text-xl font-black italic uppercase tracking-tighter">Fin du Chapitre {currentChapter.number}</h3>
+      
+      <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <a href="/" class="px-10 py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 rounded-xl font-bold text-xs uppercase transition-all tracking-widest">
+          Catalogue
+        </a>
+        <button class="px-10 py-4 font-bold text-xs uppercase rounded-xl transition-all tracking-widest text-black" style={`background-color: ${yellow}`}>
+          Chapitre Suivant
+        </button>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  /* On s'assure qu'il n'y a pas d'espace blanc entre les images de scan */
+  img {
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+    pointer-events: none; /* Empêche le clic droit simple sur les images */
+  }
+</style>

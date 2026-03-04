@@ -1,0 +1,161 @@
+---
+import Layout from '../layouts/Layout.astro';
+const yellow = "#F9D71C";
+---
+
+<Layout title="Admin Space - Rising Scan">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" is:inline></script>
+
+  <main class="max-w-5xl mx-auto p-6 min-h-screen">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-zinc-800 pb-8">
+      <div>
+        <h1 class="text-4xl font-black italic uppercase tracking-tighter">
+          <span style={`color: ${yellow}`}>⚡ Admin</span> Space
+        </h1>
+        <p class="text-zinc-500 text-[10px] mt-1 uppercase tracking-[0.2em] font-bold">Gestion Directe & Publication</p>
+      </div>
+      
+      <div class="flex gap-3">
+        <button id="importBtn" class="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl font-bold text-[10px] uppercase hover:text-[#F9D71C] transition-all">Importer JSON</button>
+        <button id="publishBtn" class="px-6 py-2 rounded-xl font-bold text-black uppercase text-xs transition-transform active:scale-95 shadow-xl shadow-[#F9D71C]/20" style={`background-color: ${yellow}`}>
+          🚀 Publier en ligne
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-1 space-y-6">
+        <section class="bg-zinc-900/40 p-6 rounded-2xl border border-zinc-800">
+          <h2 class="text-[10px] font-black uppercase mb-4 tracking-widest" style={`color: ${yellow}`}>1. Identité & Statut</h2>
+          <div class="space-y-4">
+            <input type="text" id="mangaId" placeholder="ID (ex: nano-machine)" class="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none focus:border-[#F9D71C] text-sm text-white" />
+            <input type="text" id="mangaTitle" placeholder="Titre du Manga" class="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none focus:border-[#F9D71C] text-sm text-white" />
+            <select id="mangaStatus" class="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none focus:border-[#F9D71C] text-xs font-bold uppercase text-zinc-400">
+              <option value="HOT">🔥 HOT</option>
+              <option value="NEW">✨ NEW</option>
+              <option value="END">🏁 TERMINE</option>
+              <option value="NONE">AUCUN</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="bg-zinc-900/40 p-6 rounded-2xl border border-zinc-800">
+          <h2 class="text-[10px] font-black uppercase mb-4 tracking-widest" style={`color: ${yellow}`}>2. Cover (Drag & Drop)</h2>
+          <div id="dropCover" class="group border-2 border-dashed border-zinc-800 p-8 rounded-2xl text-center hover:border-[#F9D71C] transition-all cursor-pointer">
+            <span id="coverName" class="text-[9px] text-zinc-500 uppercase font-bold italic truncate block">Dépose l'image ici</span>
+          </div>
+        </section>
+      </div>
+
+      <div class="lg:col-span-2 space-y-6">
+        <section class="bg-zinc-900/40 p-6 rounded-2xl border border-zinc-800">
+          <h2 class="text-[10px] font-black uppercase mb-4 tracking-widest" style={`color: ${yellow}`}>3. Chapitre ZIP (CHP_XXX)</h2>
+          <div id="dropZip" class="border-2 border-dashed border-zinc-800 p-16 rounded-2xl text-center hover:border-[#F9D71C] transition-all cursor-pointer bg-black/20">
+            <p class="text-xs text-zinc-500 italic">Glisse ton ZIP ici</p>
+            <div id="zipStatus" class="mt-4 text-[10px] font-bold uppercase tracking-widest text-[#F9D71C]"></div>
+          </div>
+
+          <div class="mt-8">
+            <h3 class="text-[10px] font-black uppercase text-zinc-600 mb-4 tracking-widest">Mangas prêts à être publiés</h3>
+            <div id="mangaList" class="space-y-2"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script is:inline>
+  // --- SECURITÉ ---
+  const pass = prompt("Accès Admin :");
+  if (pass !== "MON_MOT_DE_PASSE") { // CHANGE CE MOT DE PASSE
+      document.body.innerHTML = "<div style='color:white;text-align:center;margin-top:50px;'>Accès Refusé.</div>";
+      window.location.href = "/";
+  }
+
+  let db = [];
+  let currentCoverPath = "";
+
+  const dropCover = document.getElementById('dropCover');
+  const dropZip = document.getElementById('dropZip');
+  const mIdIn = document.getElementById('mangaId');
+  const mTitleIn = document.getElementById('mangaTitle');
+  const mStatusIn = document.getElementById('mangaStatus');
+  const mListDisp = document.getElementById('mangaList');
+
+  // Logic Drop Cover
+  dropCover.ondragover = (e) => e.preventDefault();
+  dropCover.ondrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    const id = mIdIn.value.trim();
+    if(!id) return alert("ID manquant");
+    currentCoverPath = `/scans/${id}/${file.name}`;
+    document.getElementById('coverName').innerText = `OK: ${file.name}`;
+  };
+
+  // Logic Drop ZIP
+  dropZip.ondragover = (e) => e.preventDefault();
+  dropZip.ondrop = async (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    const id = mIdIn.value.trim();
+    if(!id || !file.name.endsWith('.zip')) return alert("ID manquant ou pas un ZIP");
+
+    document.getElementById('zipStatus').innerText = "ANALYSE...";
+    const chapNum = file.name.match(/\d+/)?.[0] || 1;
+    const zip = await JSZip.loadAsync(file);
+    const pages = [];
+    
+    zip.forEach((path, entry) => {
+      if(!entry.dir && /\.(jpe?g|png|webp)$/i.test(entry.name)) {
+        pages.push(`/scans/${id}/CHP_${chapNum}/${entry.name}`);
+      }
+    });
+    pages.sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+    
+    let manga = db.find(m => m.id === id);
+    if(!manga) {
+      manga = { id, title: mTitleIn.value || id, status: mStatusIn.value, cover: currentCoverPath || `/scans/${id}/cover.jpg`, chapters: [] };
+      db.push(manga);
+    }
+    manga.chapters.push({ number: parseInt(chapNum), pages });
+    render();
+    document.getElementById('zipStatus').innerText = `CHAPITRE ${chapNum} AJOUTÉ !`;
+  };
+
+  function render() {
+    mListDisp.innerHTML = db.map(m => `<div class="p-3 bg-black/40 border border-zinc-800 rounded-xl text-[10px] text-white font-bold uppercase">${m.title} (${m.chapters.length} chap)</div>`).join('');
+  }
+
+  // --- PUBLICATION ---
+  document.getElementById('publishBtn').onclick = async () => {
+    if(db.length === 0) return alert("Rien à publier");
+    document.getElementById('publishBtn').innerText = "⏳ ENVOI...";
+
+    try {
+      const res = await fetch('/api/update-mangas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(db)
+      });
+      if(res.ok) {
+        alert("🚀 PUBLIÉ ! Attends 1 min que le site se mette à jour.");
+      } else {
+        alert("❌ Erreur serveur");
+      }
+    } catch (e) { alert("❌ Erreur réseau"); }
+    document.getElementById('publishBtn').innerText = "🚀 Publier en ligne";
+  };
+
+  // Import
+  document.getElementById('importBtn').onclick = () => {
+    const inp = document.createElement('input'); inp.type = 'file';
+    inp.onchange = e => {
+      const reader = new FileReader();
+      reader.onload = ev => { db = JSON.parse(ev.target.result); render(); };
+      reader.readAsText(e.target.files[0]);
+    };
+    inp.click();
+  };
+</script>

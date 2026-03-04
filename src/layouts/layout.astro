@@ -1,0 +1,77 @@
+---
+// Import du CSS généré par Astro/Tailwind
+import '../styles/global.css';
+
+const { title = "Rising Scan" } = Astro.props;
+const lightningYellow = "#F9D71C";
+---
+
+<!doctype html>
+<html lang="fr" class="bg-[#0b0b0b]">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>{title}</title>
+		</head>
+	<body class="text-white selection:bg-[#F9D71C] selection:text-black">
+		
+		<header class="sticky top-0 z-50 bg-[#0b0b0b]/90 backdrop-blur-md border-b border-zinc-800">
+			<div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+				
+				<a href="/" class="flex items-center gap-2">
+					<span class="text-2xl font-black italic uppercase tracking-tighter" style={`color: ${lightningYellow}`}>
+						⚡ RISING<span class="text-white">SCAN</span>
+					</span>
+				</a>
+
+				<nav class="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-zinc-400">
+					<a href="/" class="hover:text-white transition-colors">Catalogue</a>
+					<a href="#" class="hover:text-[#F9D71C] transition-colors">Favoris</a>
+					<a href="#" class="hover:text-white transition-colors">Genres</a>
+				</nav>
+
+				<div class="flex items-center gap-4">
+					<button class="p-2 hover:bg-zinc-800 rounded-full transition">🔍</button>
+					<a href="/admin" class="hidden sm:block text-[10px] font-black uppercase px-3 py-1.5 rounded border border-[#F9D71C] text-[#F9D71C] hover:bg-[#F9D71C] hover:text-black transition-all">
+						Admin Space
+					</a>
+				</div>
+			</div>
+		</header>
+
+		<main class="min-h-screen">
+			<slot />
+		</main>
+
+		<footer class="border-t border-zinc-900 py-10 mt-20 bg-[#080808]">
+			<div class="max-w-7xl mx-auto px-4 text-center">
+				<p class="text-zinc-600 text-xs">
+					&copy; 2026 Rising Scan - Performance Optimized (Lazy Loading Active)
+				</p>
+			</div>
+		</footer>
+
+	</body>
+</html>
+
+<style is:global>
+	/* Scrollbar personnalisée style "Lightning" */
+	::-webkit-scrollbar {
+		width: 8px;
+	}
+	::-webkit-scrollbar-track {
+		background: #0b0b0b;
+	}
+	::-webkit-scrollbar-thumb {
+		background: #F9D71C;
+		border-radius: 10px;
+	}
+	
+	/* Suppression des marges par défaut */
+	html, body {
+		margin: 0;
+		padding: 0;
+		overflow-x: hidden;
+	}
+</style>

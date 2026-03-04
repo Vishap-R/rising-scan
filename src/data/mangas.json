@@ -1,0 +1,17 @@
+[
+  {
+    "id": "nano-machine",
+    "title": "Nano Machine",
+    "status": "HOT",
+    "cover": "/scans/nano-machine/cover.jpg",
+    "chapters": [
+      {
+        "number": 1,
+        "pages": [
+          "/scans/nano-machine/ch1/01.jpg",
+          "/scans/nano-machine/ch1/02.jpg"
+        ]
+      }
+    ]
+  }
+]
