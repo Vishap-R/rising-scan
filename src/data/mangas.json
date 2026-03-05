@@ -1,20 +1,23 @@
-[
-  {
+{
+  "type": "json",
+  "mangaData": {
     "id": "TFSOE",
     "title": "The first sword on Earth",
-    "status": "NEW",
-    "cover": "/scans/TFSOE/cover.jpg",
+    "cover": "",
+    "status": "Ongoing",
     "chapters": [
       {
-        "number": 1,
+        "number": "1",
+        "title": "Chapitre 1",
+        "date": "05/03/2026",
         "pages": [
-          "/scans/TFSOE/CHP_01/fini/001.png",
-          "/scans/TFSOE/CHP_01/fini/002.png",
-          "/scans/TFSOE/CHP_01/fini/003.png",
-          "/scans/TFSOE/CHP_01/fini/004.png",
-          "/scans/TFSOE/CHP_01/fini/005.png"
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772719466/rising-scan/TFSOE/ch1/qmr0kmtunxmz3phvveea.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772719471/rising-scan/TFSOE/ch1/jdj26ply79rxsgcji08f.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772719474/rising-scan/TFSOE/ch1/q34hnd8pd6unwlpfqspe.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772719476/rising-scan/TFSOE/ch1/ghevwhssektkhrdmmmyi.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772719480/rising-scan/TFSOE/ch1/zc9ojeq0odeopuobtxf4.png"
         ]
       }
     ]
   }
-]
+}
