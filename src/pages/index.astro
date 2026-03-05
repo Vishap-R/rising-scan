@@ -2,12 +2,18 @@
 import Layout from '../layouts/Layout.astro';
 import mangasData from '../data/mangas.json';
 
-// Logique d'extraction robuste du tableau de mangas
+// LOGIQUE D'EXTRACTION ULTRA-ROBUSTE
 let mangas = [];
-if (Array.isArray(mangasData)) {
-  mangas = mangasData;
-} else if (mangasData && Array.isArray(mangasData.default)) {
-  mangas = mangasData.default;
+
+// 1. On récupère les données (gestion du .default d'Astro)
+const rawData = mangasData?.default || mangasData;
+
+// 2. On s'assure que c'est un tableau
+if (Array.isArray(rawData)) {
+  mangas = rawData;
+} else if (rawData && typeof rawData === 'object' && rawData.id) {
+  // Si le JSON contient un seul manga (objet direct), on le met dans un tableau
+  mangas = [rawData];
 }
 
 const yellow = "#F9D71C";
@@ -24,46 +30,36 @@ const yellow = "#F9D71C";
       </h2>
 
       {mangas.length === 0 ? (
-        /* État vide si le JSON n'est pas encore synchronisé */
         <div class="flex flex-col items-center justify-center py-32 border-2 border-dashed border-zinc-800 rounded-3xl bg-zinc-900/20">
-          <div class="text-5xl mb-4 animate-pulse" style={`color: ${yellow}`}>⚡</div>
-          <p class="text-zinc-500 italic text-sm">Le catalogue est en cours de mise à jour...</p>
-          <p class="text-[10px] text-zinc-700 mt-2 uppercase tracking-[0.3em]">Vérifiez le déploiement sur Vercel</p>
+          <div class="text-5xl mb-4 animate-pulse text-yellow-400">⚡</div>
+          <p class="text-zinc-500 italic text-sm">Aucune donnée trouvée dans le JSON...</p>
         </div>
       ) : (
-        /* Grille des Mangas */
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-10">
           {mangas.map((manga) => (
             <a href={`/manga/${manga.id}`} class="group flex flex-col gap-3">
               
               <div class="relative aspect-[3/4] overflow-hidden rounded-xl border-2 border-zinc-800 group-hover:border-yellow-400 transition-all duration-500 shadow-2xl bg-zinc-900">
                 <img 
-                  src={manga.cover || 'https://via.placeholder.com/300x400?text=No+Cover'} 
+                  src={manga.cover} 
                   alt={manga.title}
                   loading="lazy" 
                   class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  onerror="this.src='https://via.placeholder.com/300x400?text=Image+Error'"
+                  onerror="this.src='https://via.placeholder.com/300x400?text=Image+Introuvable'"
                 />
                 
                 <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                   <span class="text-[10px] text-yellow-400 font-black uppercase tracking-widest italic">Lire maintenant</span>
-                </div>
-
-                <div class="absolute top-3 left-3 bg-yellow-400 text-black text-[9px] font-black px-2 py-0.5 rounded-md uppercase italic shadow-lg">
-                  New
+                   <span class="text-[10px] text-yellow-400 font-black uppercase tracking-widest italic">Lire le chapitre</span>
                 </div>
               </div>
 
               <div class="space-y-1 px-1">
-                <h3 class="font-black text-sm truncate uppercase tracking-tight group-hover:text-yellow-400 transition-colors duration-300">
+                <h3 class="font-black text-sm truncate uppercase tracking-tight group-hover:text-yellow-400 transition-colors">
                   {manga.title}
                 </h3>
-                <div class="flex justify-between items-center">
-                   <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-                    Chapitre {manga.chapters ? manga.chapters.length : '0'}
-                  </p>
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                </div>
+                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+                  {manga.chapters ? manga.chapters.length : '0'} Chapitre(s)
+                </p>
               </div>
             </a>
           ))}
@@ -73,7 +69,7 @@ const yellow = "#F9D71C";
 
     <footer class="max-w-6xl mx-auto mt-32 pb-10 border-t border-zinc-900 pt-10 text-center">
         <p class="text-zinc-600 text-[9px] uppercase tracking-[0.5em]">
-          Rising Scan — Powered by <span class="text-zinc-400">Cloudinary & GitHub</span>
+          Rising Scan — Catalogue Officiel
         </p>
     </footer>
 
@@ -81,21 +77,12 @@ const yellow = "#F9D71C";
 </Layout>
 
 <style>
-  /* Animation d'apparition fluide */
   .group {
     opacity: 0;
-    animation: fadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: fadeIn 0.6s ease-out forwards;
   }
-
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
-  /* Décalage de l'animation pour chaque carte (Stagger effect) */
-  .group:nth-child(1) { animation-delay: 0.1s; }
-  .group:nth-child(2) { animation-delay: 0.2s; }
-  .group:nth-child(3) { animation-delay: 0.3s; }
-  .group:nth-child(4) { animation-delay: 0.4s; }
-  .group:nth-child(5) { animation-delay: 0.5s; }
 </style>
