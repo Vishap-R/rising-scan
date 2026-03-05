@@ -1,16 +1,17 @@
 {
   "name": "rising-scan",
   "type": "module",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "npm install --legacy-peer-deps && astro build"
-    "preview": "astro preview"
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/tailwind": "^6.0.2",
-    "@tailwindcss/vite": "^4.2.1",
-    "astro": "latest",
-    "tailwindcss": "^4.2.1"
+    "astro": "^5.0.0",
+    "tailwindcss": "^4.2.1",
+    "@tailwindcss/vite": "^4.2.1"
   }
 }
