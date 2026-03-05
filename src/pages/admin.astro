@@ -1,9 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
+// Assure-toi que ton CSS global est bien importé ici ou dans ton Layout
 ---
 
 <Layout title="Admin Space - Rising Scan">
-  <main class="min-h-screen bg-gray-900 text-white p-4 font-sans">
+  <main id="adminContent" class="hidden min-h-screen bg-gray-900 text-white p-4 font-sans">
+    
     <header class="flex justify-between items-center border-b-4 border-yellow-400 pb-4 mb-8">
       <h1 class="text-3xl font-black text-yellow-400 uppercase tracking-tighter italic">
         ⚡ Admin Space <span class="text-white text-sm font-normal not-italic">v2.0</span>
@@ -15,30 +17,30 @@ import Layout from '../layouts/Layout.astro';
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <section class="lg:col-span-1 bg-gray-800 p-6 rounded-lg border-2 border-yellow-400">
+      <section class="lg:col-span-1 bg-gray-800 p-6 rounded-lg border-2 border-yellow-400 shadow-[8px_8px_0px_#eab308]">
         <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
           <span class="bg-yellow-400 text-black px-2 py-0.5 rounded italic">1</span> Nouveau Manga
         </h2>
         <div class="space-y-4">
-          <input type="text" id="mangaTitle" placeholder="Titre du manga..." class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-yellow-400 outline-none" />
-          <input type="text" id="mangaId" placeholder="ID (ex: solo-leveling)..." class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-yellow-400 outline-none" />
+          <input type="text" id="mangaTitle" placeholder="Titre du manga..." class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-yellow-400 outline-none text-yellow-400" />
+          <input type="text" id="mangaId" placeholder="ID (ex: solo-leveling)..." class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-yellow-400 outline-none text-gray-400" />
           
-          <div class="border-2 border-dashed border-gray-600 p-4 rounded text-center hover:border-yellow-400 transition" id="dropZoneZip">
-            <p class="text-gray-400 text-sm">Glisser le ZIP du chapitre ici</p>
+          <div class="border-2 border-dashed border-gray-600 p-8 rounded text-center hover:border-yellow-400 cursor-pointer transition" id="dropZoneZip">
+            <p class="text-gray-400 text-sm">📁 Cliquez ou glissez le ZIP ici</p>
             <input type="file" id="fileZip" accept=".zip" class="hidden" />
           </div>
 
-          <button id="addMangaBtn" class="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-3 rounded uppercase transition transform active:scale-95">
-            Ajouter à la liste locale
+          <button id="addMangaBtn" class="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded uppercase transition transform active:scale-95 shadow-lg">
+            Ajouter à la file d'attente
           </button>
         </div>
       </section>
 
       <section class="lg:col-span-2">
-        <div class="flex justify-between items-end mb-4">
-          <h2 class="text-xl font-bold italic underline decoration-yellow-400 decoration-4">Gestion des œuvres</h2>
-          <button id="publishBtn" class="bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-2 rounded-full shadow-lg transition flex items-center gap-2">
-            🚀 Publier sur le Cloud & GitHub
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-black italic border-b-4 border-yellow-400">FILE D'ATTENTE</h2>
+          <button id="publishBtn" class="bg-green-600 hover:bg-green-500 text-white font-black px-8 py-3 rounded-full shadow-[0_0_20px_rgba(22,163,74,0.4)] transition-all flex items-center gap-2 uppercase italic">
+            🚀 Tout Publier
           </button>
         </div>
         
@@ -52,42 +54,36 @@ import Layout from '../layouts/Layout.astro';
 <script>
   import JSZip from 'jszip';
 
+  // --- SÉCURITÉ ACCÈS ---
+  const pass = prompt("Accès restreint - Entrez le code :");
+  if (pass === "risingtest") { // ⚠️ Change ceci par ton vrai code
+      document.getElementById('adminContent').classList.remove('hidden');
+  } else {
+      alert("Accès refusé.");
+      window.location.href = "/";
+  }
+
   let db = JSON.parse(localStorage.getItem('rising_scan_db')) || [];
   let currentZipFiles = [];
 
-  // --- LOGIQUE LOCALSTORAGE ---
-  const save = () => {
-    localStorage.setItem('rising_scan_db', JSON.stringify(db));
-    render();
+  // --- CONFIGURATION ---
+  const cloudName = import.meta.env.PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+  // --- RENDER ---
+  const render = () => {
+    const list = document.getElementById('mangaList');
+    list.innerHTML = db.map((m, index) => `
+      <div class="bg-gray-800 border-l-8 border-yellow-400 p-5 flex justify-between items-center rounded-r-lg shadow-xl">
+        <div>
+          <h3 class="font-black text-xl text-yellow-400 uppercase italic">${m.title}</h3>
+          <p class="text-xs text-gray-400 tracking-widest uppercase">ID: ${m.id} | ${m.chapters[0].pages.length} Pages prêtes</p>
+        </div>
+        <button onclick="removeManga(${index})" class="bg-red-900/50 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold transition">RETIRER</button>
+      </div>
+    `).join('');
   };
 
-  // --- EXPORT / IMPORT (Conseil Sécurité) ---
-  document.getElementById('exportBtn').onclick = () => {
-    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup_mangas_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-  };
-
-  document.getElementById('importBtn').onclick = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = e => {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        db = JSON.parse(event.target.result);
-        save();
-      };
-      reader.readAsText(file);
-    };
-    input.click();
-  };
-
-  // --- GESTION DU ZIP ---
+  // --- LOGIQUE ZIP ---
   document.getElementById('dropZoneZip').onclick = () => document.getElementById('fileZip').click();
   document.getElementById('fileZip').onchange = async (e) => {
     const file = e.target.files[0];
@@ -97,30 +93,27 @@ import Layout from '../layouts/Layout.astro';
     const contents = await zip.loadAsync(file);
     currentZipFiles = [];
 
-    // Extraction des images du ZIP
-    for (let filename in contents.files) {
-      if (!contents.files[filename].dir && filename.match(/\.(jpg|jpeg|png|webp)$/i)) {
+    const files = Object.keys(contents.files).filter(f => f.match(/\.(jpg|jpeg|png|webp)$/i)).sort();
+    
+    for (let filename of files) {
         const blob = await contents.files[filename].async("blob");
         currentZipFiles.push({ name: filename, blob: blob });
-      }
     }
-    alert(`${currentZipFiles.length} images extraites du ZIP !`);
+    alert(`⚡ ${currentZipFiles.length} images extraites avec succès !`);
   };
 
   // --- CLOUDINARY UPLOAD ---
   async function uploadToCloudinary(fileBlob, folderPath) {
-    const cloudName = "dw6lou8mv"; // ⚠️ À MODIFIER PAR VOTRE NOM DE CLOUDINARY
     const formData = new FormData();
     formData.append('file', fileBlob);
-    formData.append('upload_preset', 'ml_default');
+    formData.append('upload_preset', 'ml_default'); // ⚠️ Doit être "Unsigned" dans Cloudinary
     formData.append('folder', folderPath);
 
     const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
       method: 'POST',
       body: formData
     });
-    const data = await res.json();
-    return data.secure_url;
+    return await res.json();
   }
 
   // --- AJOUT LOCAL ---
@@ -128,93 +121,80 @@ import Layout from '../layouts/Layout.astro';
     const title = document.getElementById('mangaTitle').value;
     const id = document.getElementById('mangaId').value;
     
-    if(!title || !id || currentZipFiles.length === 0) return alert("Infos manquantes !");
+    if(!title || !id || currentZipFiles.length === 0) return alert("ZIP ou Titre manquant !");
 
-    const newManga = {
-      id,
-      title,
-      cover: "", // Sera rempli au moment de l'upload Cloudinary
-      status: "Ongoing",
-      chapters: [{
-        number: "1",
-        title: "Chapitre 1",
-        date: new Date().toLocaleDateString(),
-        pages: currentZipFiles // On garde les blobs temporairement
-      }]
-    };
+    db.push({
+      id, title, status: "Ongoing",
+      chapters: [{ number: "1", title: "Chapitre 1", date: new Date().toLocaleDateString(), pages: currentZipFiles }]
+    });
 
-    db.push(newManga);
-    save();
+    localStorage.setItem('rising_scan_db', JSON.stringify(db));
+    currentZipFiles = [];
+    render();
   };
 
-  // --- PUBLICATION (GITHUB + CLOUDINARY) ---
+  // --- PUBLICATION FINALE ---
   document.getElementById('publishBtn').onclick = async () => {
-    const pass = prompt("Mot de passe Admin :");
-    if (pass !== "TON_MOT_DE_PASSE") return alert("Accès refusé");
-
     const btn = document.getElementById('publishBtn');
-    btn.innerText = "⏳ Uploading to Cloud...";
+    btn.innerText = "⏳ UPLOADING TO CLOUD...";
     btn.disabled = true;
 
     try {
       for (const manga of db) {
         for (const chapter of manga.chapters) {
-          // Si les pages sont encore des objets blobs (pas encore uploadées)
-          if (typeof chapter.pages[0] === 'object') {
+          // Si les pages sont encore des fichiers (blobs)
+          if (chapter.pages[0].blob) {
             const uploadedUrls = [];
             for (const fileObj of chapter.pages) {
-              const url = await uploadToCloudinary(fileObj.blob, `rising-scan/${manga.id}/ch${chapter.number}`);
-              uploadedUrls.push(url);
+              const data = await uploadToCloudinary(fileObj.blob, `rising-scan/${manga.id}/ch${chapter.number}`);
+              uploadedUrls.push(data.secure_url);
             }
-            chapter.pages = uploadedUrls; // On remplace par les vrais liens Cloudinary
+            chapter.pages = uploadedUrls; // Remplace les blobs par les URLs Cloudinary
           }
         }
 
-        // Envoi final vers l'API GitHub via ton fichier API
+        // MAJ GitHub via API
         const res = await fetch('/api/update-mangas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'json', mangaData: manga })
         });
-
-        if (!res.ok) throw new Error("Erreur GitHub");
+        if (!res.ok) throw new Error("Erreur API GitHub");
       }
-      alert("🔥 Tout est en ligne (Cloudinary + GitHub) !");
-      save();
+      
+      alert("🔥 TOUT EST EN LIGNE !");
+      db = []; // Vide la file d'attente
+      localStorage.setItem('rising_scan_db', JSON.stringify(db));
+      render();
     } catch (err) {
-      alert("❌ Erreur : " + err.message);
+      alert("❌ ERREUR: " + err.message);
     } finally {
-      btn.innerText = "🚀 Publier en ligne";
+      btn.innerText = "🚀 TOUT PUBLIER";
       btn.disabled = false;
     }
   };
 
-  function render() {
-    const list = document.getElementById('mangaList');
-    list.innerHTML = db.map((m, index) => `
-      <div class="bg-gray-800 border-l-4 border-yellow-400 p-4 flex justify-between items-center rounded shadow-md">
-        <div>
-          <h3 class="font-bold text-yellow-400">${m.title}</h3>
-          <p class="text-xs text-gray-400">${m.chapters.length} chapitre(s) en attente</p>
-        </div>
-        <button onclick="window.removeManga(${index})" class="text-red-500 hover:text-red-400 font-bold">Supprimer</button>
-      </div>
-    `).join('');
-  }
+  // --- EXPORT/IMPORT ---
+  document.getElementById('exportBtn').onclick = () => {
+    const blob = new Blob([JSON.stringify(db)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'mangas_backup.json'; a.click();
+  };
 
+  // Gestion de la suppression globale
   window.removeManga = (i) => {
-    if(confirm("Supprimer ?")) {
-      db.splice(i, 1);
-      save();
-    }
-  }
+    db.splice(i, 1);
+    localStorage.setItem('rising_scan_db', JSON.stringify(db));
+    render();
+  };
 
   render();
 </script>
 
 <style>
-  /* Style pour le scrollbar Jaune Éclair */
-  ::-webkit-scrollbar { width: 8px; }
+  /* Scrollbar Custom */
+  ::-webkit-scrollbar { width: 10px; }
   ::-webkit-scrollbar-track { background: #111827; }
-  ::-webkit-scrollbar-thumb { background: #eab308; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb { background: #eab308; border-radius: 5px; }
 </style>
