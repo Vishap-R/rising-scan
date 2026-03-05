@@ -1,3 +1,4 @@
+export const prerender = false; // Dit à Astro de ne pas essayer de générer cette page à l'avance
 export async function POST({ request }) {
   const data = await request.json();
   
@@ -33,4 +34,5 @@ export async function POST({ request }) {
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
+
 }
