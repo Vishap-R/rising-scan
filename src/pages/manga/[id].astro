@@ -3,25 +3,37 @@ import Layout from '../../layouts/Layout.astro';
 import mangasData from '../../data/mangas.json';
 
 // Génération des pages statiques pour Vercel
-export function getStaticPaths() {
-  // Sécurité : on s'assure que mangasData est un tableau
-  const mangas = Array.isArray(mangasData) ? mangasData : [];
+export async function getStaticPaths() {
+  // Extraction sécurisée (gestion du .default d'Astro)
+  const rawData = mangasData?.default || mangasData;
+
+  // SÉCURITÉ CRITIQUE : Si le JSON est vide ou invalide, on ne génère rien au lieu de planter
+  if (!rawData || (Array.isArray(rawData) && rawData.length === 0)) {
+    return [];
+  }
+
+  // Force le format tableau si c'est un objet unique
+  const mangas = Array.isArray(rawData) ? rawData : [rawData];
   
   return mangas.map((manga) => ({
-    params: { id: manga.id },
+    params: { id: manga.id.toString() },
     props: { manga },
   }));
 }
 
 const { manga } = Astro.props;
 
-// Sécurité critique : Si le manga n'a pas de chapitres ou si le JSON est vide durant le build
+// Sécurité : Si le manga n'a pas de chapitres
 if (!manga || !manga.chapters || manga.chapters.length === 0) {
   return Astro.redirect('/404');
 }
 
 const yellow = "#F9D71C";
+// On récupère le premier chapitre (ou tu peux adapter pour gérer plusieurs chapitres via l'URL)
 const currentChapter = manga.chapters[0];
+
+// Logique pour le bouton "Chapitre Suivant"
+const nextChapter = manga.chapters.find(ch => parseInt(ch.number) === parseInt(currentChapter.number) + 1);
 ---
 
 <Layout title={`${manga.title} - Chapitre ${currentChapter.number}`}>
@@ -29,9 +41,9 @@ const currentChapter = manga.chapters[0];
   <div class="bg-[#0b0b0b]/95 border-b border-zinc-800 p-3 sticky top-0 z-40 backdrop-blur-sm">
     <div class="max-w-3xl mx-auto flex justify-between items-center px-4">
       <div class="flex flex-col">
-        <span class="text-[10px] uppercase font-bold text-zinc-500 tracking-widest text-yellow-400">Lecture en cours</span>
-        <h2 class="font-bold text-sm truncate w-40 sm:w-auto text-white">
-            {manga.title} <span style={`color: ${yellow}`}>#Ch.{currentChapter.number}</span>
+        <span class="text-[10px] uppercase font-bold tracking-widest" style={`color: ${yellow}`}>Lecture en cours</span>
+        <h2 class="font-bold text-sm truncate w-40 sm:w-auto text-white uppercase italic">
+            {manga.title} <span class="opacity-50 ml-1">#Ch.{currentChapter.number}</span>
         </h2>
       </div>
       
@@ -75,15 +87,25 @@ const currentChapter = manga.chapters[0];
         <a href="/" class="px-10 py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 rounded-xl font-bold text-xs uppercase transition-all tracking-widest">
           Catalogue
         </a>
-        <button class="px-10 py-4 font-bold text-xs uppercase rounded-xl transition-all tracking-widest text-black shadow-lg" style={`background-color: ${yellow}`}>
-          Chapitre Suivant
-        </button>
+        
+        {nextChapter ? (
+          <a href={`/manga/${manga.id}/chapitre-${nextChapter.number}`} 
+             class="px-10 py-4 font-bold text-xs uppercase rounded-xl transition-all tracking-widest text-black shadow-lg" 
+             style={`background-color: ${yellow}`}>
+            Chapitre Suivant
+          </a>
+        ) : (
+          <button disabled class="px-10 py-4 font-bold text-xs uppercase rounded-xl bg-zinc-800 text-zinc-500 cursor-not-allowed tracking-widest opacity-50">
+            Dernier Chapitre
+          </button>
+        )}
       </div>
     </div>
   </main>
 </Layout>
 
 <style>
+  /* Protection basique des images */
   img {
     -webkit-user-select: none;
     -moz-user-select: none;
