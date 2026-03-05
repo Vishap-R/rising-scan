@@ -1,15 +1,18 @@
 [
   {
-    "id": "nano-machine",
-    "title": "Nano Machine",
-    "status": "HOT",
-    "cover": "/scans/nano-machine/cover.jpg",
+    "id": "TFSOE",
+    "title": "The first sword on Earth",
+    "status": "NEW",
+    "cover": "/scans/TFSOE/cover.jpg",
     "chapters": [
       {
         "number": 1,
         "pages": [
-          "/scans/nano-machine/ch1/01.jpg",
-          "/scans/nano-machine/ch1/02.jpg"
+          "/scans/TFSOE/CHP_01/fini/001.png",
+          "/scans/TFSOE/CHP_01/fini/002.png",
+          "/scans/TFSOE/CHP_01/fini/003.png",
+          "/scans/TFSOE/CHP_01/fini/004.png",
+          "/scans/TFSOE/CHP_01/fini/005.png"
         ]
       }
     ]
