@@ -2,38 +2,27 @@
 import Layout from '../../layouts/Layout.astro';
 import mangasData from '../../data/mangas.json';
 
-// Génération des pages statiques pour Vercel
 export async function getStaticPaths() {
-  // Extraction sécurisée (gestion du .default d'Astro)
   const rawData = mangasData?.default || mangasData;
 
-  // SÉCURITÉ CRITIQUE : Si le JSON est vide ou invalide, on ne génère rien au lieu de planter
-  if (!rawData || (Array.isArray(rawData) && rawData.length === 0)) {
-    return [];
-  }
+  // 1. Sécurité : Si pas de données, on ne génère rien
+  if (!rawData) return [];
 
-  // Force le format tableau si c'est un objet unique
-  const mangas = Array.isArray(rawData) ? rawData : [rawData];
-  
-  return mangas.map((manga) => ({
+  // 2. Force le format tableau
+  const mangasArray = Array.isArray(rawData) ? rawData : [rawData];
+
+  // 3. FILTRE CRITIQUE : On ne garde que les objets qui ont un ID valide
+  // On retire aussi les objets vides ou mal formés (comme le "type: json" de ton API)
+  const validMangas = mangasArray.filter(m => m && typeof m === 'object' && m.id);
+
+  return validMangas.map((manga) => ({
     params: { id: manga.id.toString() },
     props: { manga },
   }));
 }
 
 const { manga } = Astro.props;
-
-// Sécurité : Si le manga n'a pas de chapitres
-if (!manga || !manga.chapters || manga.chapters.length === 0) {
-  return Astro.redirect('/404');
-}
-
-const yellow = "#F9D71C";
-// On récupère le premier chapitre (ou tu peux adapter pour gérer plusieurs chapitres via l'URL)
-const currentChapter = manga.chapters[0];
-
-// Logique pour le bouton "Chapitre Suivant"
-const nextChapter = manga.chapters.find(ch => parseInt(ch.number) === parseInt(currentChapter.number) + 1);
+// ... (le reste de ton code ne change pas)
 ---
 
 <Layout title={`${manga.title} - Chapitre ${currentChapter.number}`}>
@@ -113,3 +102,4 @@ const nextChapter = manga.chapters.find(ch => parseInt(ch.number) === parseInt(c
     pointer-events: none;
   }
 </style>
+
