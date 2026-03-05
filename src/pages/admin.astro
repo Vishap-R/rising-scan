@@ -7,7 +7,7 @@ import Layout from '../layouts/Layout.astro';
     
     <header class="flex justify-between items-center border-b-4 border-yellow-400 pb-4 mb-8">
       <h1 class="text-3xl font-black text-yellow-400 uppercase tracking-tighter italic">
-        ⚡ Admin Space <span class="text-white text-sm font-normal not-italic">v2.2</span>
+        ⚡ Admin Space <span class="text-white text-sm font-normal not-italic">v2.3</span>
       </h1>
       <div class="space-x-2">
         <button id="exportBtn" class="bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded text-[10px] font-bold border border-zinc-700 transition uppercase tracking-widest text-yellow-400">Export JSON</button>
@@ -47,7 +47,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="flex justify-between items-center">
           <h2 class="text-2xl font-black italic uppercase tracking-tighter">File d'attente <span id="queueCount" class="text-yellow-400 ml-2">0</span></h2>
           <button id="publishBtn" class="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-10 py-4 rounded-full shadow-xl transition-all flex items-center gap-2 uppercase italic">
-             🚀 Tout Publier
+             🚀 Lancer la Publication
           </button>
         </div>
         <div id="mangaList" class="grid grid-cols-1 gap-4"></div>
@@ -95,22 +95,30 @@ import Layout from '../layouts/Layout.astro';
     document.getElementById('zipStatus').innerText = `✅ ${currentZipPages.length} Pages`;
   };
 
-  // --- UPLOAD CLOUDINARY (FORÇAGE DOSSIERS) ---
-  async function uploadToCloud(fileBlob, folderPath) {
+  // --- SOLUTION 2 : UPLOAD VIA PUBLIC_ID (FORCE LES DOSSIERS) ---
+  async function uploadToCloud(fileBlob, folderPath, fileName) {
     const formData = new FormData();
     formData.append('file', fileBlob);
     formData.append('upload_preset', 'ml_default');
-    formData.append('folder', folderPath); // C'est ici que Cloudinary crée le dossier
+    
+    // On combine le dossier et le nom du fichier pour forcer Cloudinary
+    // On nettoie le nom pour éviter les caractères interdits
+    const cleanFileName = fileName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    formData.append('public_id', `${folderPath}/${cleanFileName}_${Math.random().toString(36).substring(7)}`);
 
     const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
       method: 'POST',
       body: formData
     });
-    if(!res.ok) throw new Error("Erreur Cloudinary");
+    
+    if(!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error.message);
+    }
     return await res.json();
   }
 
-  // --- AJOUT LOCAL ---
+  // --- GESTION LOCALE ---
   document.getElementById('addMangaBtn').onclick = () => {
     const title = document.getElementById('mangaTitle').value;
     const id = document.getElementById('mangaId').value;
@@ -130,41 +138,46 @@ import Layout from '../layouts/Layout.astro';
     document.getElementById('zipStatus').innerText = "📁 Glisser le ZIP (Chap. 1)";
   };
 
-  // --- PUBLICATION ---
+  // --- PUBLICATION FINALE ---
   document.getElementById('publishBtn').onclick = async () => {
     const btn = document.getElementById('publishBtn');
+    if (db.length === 0) return alert("File d'attente vide !");
     btn.disabled = true;
 
     try {
       for (let manga of db) {
-        // 1. Cover
-        btn.innerText = "⏳ COVER...";
-        const cData = await uploadToCloud(manga.tempCover, `rising-scan/${manga.id}/assets`);
+        // 1. Upload Cover
+        btn.innerText = "⏳ ENVOI COVER...";
+        const cData = await uploadToCloud(manga.tempCover, `rising-scan/${manga.id}/assets`, 'cover');
         manga.cover = cData.secure_url;
         delete manga.tempCover;
 
-        // 2. Pages
-        const finalPages = [];
+        // 2. Upload Pages du Chapitre
+        const finalUrls = [];
         for (let i = 0; i < manga.chapters[0].pages.length; i++) {
             btn.innerText = `⏳ PAGE ${i+1}/${manga.chapters[0].pages.length}`;
-            const pData = await uploadToCloud(manga.chapters[0].pages[i].blob, `rising-scan/${manga.id}/ch1`);
-            finalPages.push(pData.secure_url);
+            const pData = await uploadToCloud(manga.chapters[0].pages[i].blob, `rising-scan/${manga.id}/ch1`, `page_${i+1}`);
+            finalUrls.push(pData.secure_url);
         }
-        manga.chapters[0].pages = finalPages;
+        manga.chapters[0].pages = finalUrls;
 
         // 3. GitHub
-        await fetch('/api/update-mangas', {
+        btn.innerText = "☁️ MISE À JOUR GITHUB...";
+        const res = await fetch('/api/update-mangas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'json', mangaData: manga })
         });
+        if(!res.ok) throw new Error("Erreur lors de la mise à jour GitHub");
       }
-      alert("🔥 PUBLIÉ !");
+      
+      alert("🔥 TOUT EST EN LIGNE !");
       db = []; save();
     } catch (e) {
-      alert("Erreur: " + e.message);
+      alert("ERREUR : " + e.message);
     } finally {
-      btn.disabled = false; btn.innerText = "🚀 Tout Publier";
+      btn.disabled = false;
+      btn.innerText = "🚀 Lancer la Publication";
     }
   };
 
@@ -172,20 +185,35 @@ import Layout from '../layouts/Layout.astro';
   function render() {
     document.getElementById('queueCount').innerText = db.length;
     document.getElementById('mangaList').innerHTML = db.map((m, i) => `
-      <div class="bg-zinc-900 border border-zinc-800 p-4 flex justify-between rounded-2xl items-center">
-        <h3 class="font-black text-yellow-400 italic">${m.title}</h3>
-        <button onclick="removeManga(${i})" class="text-xs text-zinc-500 uppercase font-bold hover:text-red-500">Retirer</button>
+      <div class="bg-zinc-900 border border-zinc-800 p-4 flex justify-between rounded-2xl items-center shadow-lg">
+        <div>
+            <h3 class="font-black text-yellow-400 italic uppercase">${m.title}</h3>
+            <p class="text-[9px] text-zinc-500 font-bold tracking-widest uppercase">ID: ${m.id} | ${m.chapters[0].pages.length} Pages</p>
+        </div>
+        <button onclick="removeManga(${i})" class="text-[10px] text-zinc-600 uppercase font-black hover:text-red-500 transition">Retirer</button>
       </div>
     `).join('');
   }
   window.removeManga = (i) => { db.splice(i, 1); save(); };
 
-  // Export/Import
+  // Export/Import JSON (Comme demandé pour le LocalStorage)
   document.getElementById('exportBtn').onclick = () => {
     const blob = new Blob([JSON.stringify(db)], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'rising_backup.json'; a.click();
+    a.download = `backup_rising_${new Date().getTime()}.json`;
+    a.click();
+  };
+
+  document.getElementById('importBtn').onclick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = e => {
+      const reader = new FileReader();
+      reader.onload = () => { db = JSON.parse(reader.result); save(); };
+      reader.readAsText(e.target.files[0]);
+    };
+    input.click();
   };
 
   render();
