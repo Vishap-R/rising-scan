@@ -1,6 +1,28 @@
-{
-  "type": "json",
-  "mangaData": {
+[
+  {
+    "type": "json",
+    "mangaData": {
+      "id": "TFSOE",
+      "title": "The first sword on Earth",
+      "status": "Ongoing",
+      "chapters": [
+        {
+          "number": "1",
+          "title": "Chapitre 1",
+          "date": "05/03/2026",
+          "pages": [
+            "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727140/rising-scan/TFSOE/ch1/page_1_a92fwc.png",
+            "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727143/rising-scan/TFSOE/ch1/page_2_ludlo9.png",
+            "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727145/rising-scan/TFSOE/ch1/page_3_qp3t1.png",
+            "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727148/rising-scan/TFSOE/ch1/page_4_q0tssc.png",
+            "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727149/rising-scan/TFSOE/ch1/page_5_87f42a.png"
+          ]
+        }
+      ],
+      "cover": "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727139/rising-scan/TFSOE/assets/cover_evo8w.jpg"
+    }
+  },
+  {
     "id": "TFSOE",
     "title": "The first sword on Earth",
     "status": "Ongoing",
@@ -10,14 +32,14 @@
         "title": "Chapitre 1",
         "date": "05/03/2026",
         "pages": [
-          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727140/rising-scan/TFSOE/ch1/page_1_a92fwc.png",
-          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727143/rising-scan/TFSOE/ch1/page_2_ludlo9.png",
-          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727145/rising-scan/TFSOE/ch1/page_3_qp3t1.png",
-          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727148/rising-scan/TFSOE/ch1/page_4_q0tssc.png",
-          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727149/rising-scan/TFSOE/ch1/page_5_87f42a.png"
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727859/rising-scan/TFSOE/ch1/page_1_fhrqa.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727861/rising-scan/TFSOE/ch1/page_2_7id4i.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727864/rising-scan/TFSOE/ch1/page_3_1p05sc.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727866/rising-scan/TFSOE/ch1/page_4_3g9a6g.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727867/rising-scan/TFSOE/ch1/page_5_x4grzf.png"
         ]
       }
     ],
-    "cover": "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727139/rising-scan/TFSOE/assets/cover_evo8w.jpg"
+    "cover": "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772727858/rising-scan/TFSOE/assets/cover_19bygk.jpg"
   }
-}
+]
