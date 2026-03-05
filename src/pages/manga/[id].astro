@@ -2,20 +2,11 @@
 import Layout from '../../layouts/Layout.astro';
 import mangasData from '../../data/mangas.json';
 
-// 1. Génération des routes statiques
 export async function getStaticPaths() {
-  // Gestion de l'import Astro (.default)
   const rawData = mangasData?.default || mangasData;
-  
   if (!rawData) return [];
-
-  // On s'assure d'avoir un tableau
   const mangasArray = Array.isArray(rawData) ? rawData : [rawData];
-  
-  // FILTRE DE SÉCURITÉ : On ignore tout ce qui n'est pas un manga valide avec des chapitres
-  const validMangas = mangasArray.filter(m => 
-    m && typeof m === 'object' && m.id && m.chapters && m.chapters.length > 0
-  );
+  const validMangas = mangasArray.filter(m => m && typeof m === 'object' && m.id);
 
   return validMangas.map((manga) => ({
     params: { id: manga.id.toString() },
@@ -23,114 +14,102 @@ export async function getStaticPaths() {
   }));
 }
 
-// 2. Récupération des données du manga pour la page
 const { manga } = Astro.props;
-
-// 3. Définition des variables (Utilisées dans le HTML ci-dessous)
-const currentChapter = manga.chapters[0];
 const yellow = "#F9D71C";
 
-// Logique pour trouver le chapitre suivant (si il existe)
-const nextChapter = manga.chapters.find(ch => 
-  parseInt(ch.number) === parseInt(currentChapter.number) + 1
-);
+// Tri des chapitres par numéro (du plus récent au plus ancien)
+const sortedChapters = [...manga.chapters].sort((a, b) => b.number - a.number);
+const firstChapter = manga.chapters[0];
+const lastChapter = sortedChapters[0];
 ---
 
-<Layout title={`${manga.title} - Chapitre ${currentChapter.number}`}>
-  
-  <div class="bg-[#0b0b0b]/95 border-b border-zinc-800 p-3 sticky top-0 z-40 backdrop-blur-sm">
-    <div class="max-w-3xl mx-auto flex justify-between items-center px-4">
-      <div class="flex flex-col">
-        <span class="text-[10px] uppercase font-bold tracking-widest" style={`color: ${yellow}`}>Lecture en cours</span>
-        <h2 class="font-bold text-sm truncate w-40 sm:w-auto text-white uppercase italic">
-            {manga.title} <span class="opacity-50 ml-1">#Ch.{currentChapter.number}</span>
-        </h2>
-      </div>
-      
-      <div class="flex gap-3">
-        <select class="bg-zinc-900 border border-zinc-700 text-white text-[10px] font-bold uppercase p-2 rounded outline-none focus:border-[#F9D71C] cursor-pointer">
-          {manga.chapters.map(ch => (
-            <option selected={ch.number === currentChapter.number}>
-              Chapitre {ch.number}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <main class="max-w-4xl mx-auto flex flex-col items-center">
+<Layout title={`${manga.title} - Rising Scan`}>
+  <main class="min-h-screen bg-[#0b0b0b] text-white">
     
-    <div class="w-full flex flex-col bg-black shadow-2xl">
-      {currentChapter.pages.map((page, index) => (
-        <div class="relative w-full border-b border-zinc-900/10 group">
-          <img 
-            src={page} 
-            loading="lazy" 
-            decoding="async"
-            alt={`Page ${index + 1}`}
-            class="w-full h-auto block"
-            onerror="this.src='https://via.placeholder.com/800x1200?text=Image+Indisponible'"
-          />
-          <div class="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-mono text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity border border-zinc-800">
-            {index + 1} / {currentChapter.pages.length}
+    <div class="relative h-[400px] w-full overflow-hidden">
+      <div 
+        class="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110" 
+        style={`background-image: url(${manga.cover})`}
+      ></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-[#0b0b0b] via-[#0b0b0b]/60 to-transparent"></div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-6 -mt-64 relative z-10">
+      <div class="flex flex-col md:flex-row gap-10">
+        
+        <div class="w-full md:w-72 flex-shrink-0">
+          <div class="rounded-2xl overflow-hidden border-2 border-zinc-800 shadow-2xl bg-zinc-900 aspect-[3/4]">
+            <img src={manga.cover} alt={manga.title} class="w-full h-full object-cover" loading="lazy" />
+          </div>
+          
+          <div class="mt-6 space-y-4">
+            <a href={`/lecture/${manga.id}/${firstChapter.number}`} class="flex items-center justify-center w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all gap-2 text-sm">
+               <span>📖</span> Commencer la lecture
+            </a>
+            <button class="w-full py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-xl font-bold transition-all text-sm">
+               + Ajouter aux favoris
+            </button>
+            
+            <div class="p-4 bg-zinc-900/50 rounded-xl border border-zinc-800/50 space-y-3 text-xs">
+              <div class="flex justify-between"><span class="text-zinc-500">Statut</span><span class="text-green-400 font-bold uppercase">{manga.status || 'En cours'}</span></div>
+              <div class="flex justify-between"><span class="text-zinc-500">Type</span><span class="text-purple-400 font-bold uppercase">Manhwa</span></div>
+            </div>
           </div>
         </div>
-      ))}
+
+        <div class="flex-1">
+          <h1 class="text-4xl md:text-5xl font-black uppercase italic tracking-tighter mb-2">
+            {manga.title}
+          </h1>
+          <p class="text-zinc-500 text-sm mb-8 font-medium italic">Nom original : {manga.title_jp || 'N/A'}</p>
+
+          <section class="bg-zinc-900/40 border border-zinc-800 p-6 rounded-2xl mb-10">
+            <h3 class="text-sm font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+               <span style={`color: ${yellow}`}>⚡</span> Synopsis
+            </h3>
+            <p class="text-zinc-400 text-sm leading-relaxed italic">
+              {manga.description || "Aucune description disponible pour le moment. Plongez dans cette aventure épique sur Rising Scan !"}
+            </p>
+          </section>
+
+          <section>
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-xl font-black uppercase italic italic flex items-center gap-3">
+                <span class="w-8 h-1 rounded-full" style={`background-color: ${yellow}`}></span>
+                Chapitres
+              </h3>
+              <span class="text-[10px] bg-zinc-800 px-3 py-1 rounded-full text-zinc-400 font-bold uppercase">
+                {manga.chapters.length} épisodes
+              </span>
+            </div>
+
+            <div class="grid gap-3">
+              {sortedChapters.map((ch) => (
+                <a 
+                  href={`/lecture/${manga.id}/${ch.number}`}
+                  class="group flex items-center justify-between p-4 bg-zinc-900/40 hover:bg-zinc-800 border border-zinc-800 hover:border-yellow-400/50 rounded-xl transition-all"
+                >
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-yellow-400 transition-colors">
+                      {ch.number}
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-sm group-hover:text-white">Chapitre {ch.number}</h4>
+                      <p class="text-[10px] text-zinc-500 uppercase font-bold">{ch.date || 'Récemment'}</p>
+                    </div>
+                  </div>
+                  <span class="text-zinc-700 group-hover:text-yellow-400 transition-colors">▶</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        </div>
+
+      </div>
     </div>
 
-    <div class="w-full py-24 px-4 text-center space-y-8 bg-gradient-to-b from-black to-[#0b0b0b] text-white">
-      <div class="inline-block p-5 rounded-full bg-zinc-900 mb-4 border border-zinc-800 shadow-[0_0_20px_rgba(249,215,28,0.2)]" style={`color: ${yellow}`}>
-        <span class="text-2xl">⚡</span>
-      </div>
-      
-      <h3 class="text-2xl font-black italic uppercase tracking-tighter">
-        Fin du Chapitre {currentChapter.number}
-      </h3>
-      
-      <div class="flex flex-col sm:flex-row justify-center items-center gap-6">
-        <a href="/" class="group flex items-center gap-2 px-10 py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 rounded-xl font-bold text-xs uppercase transition-all tracking-widest text-zinc-400 hover:text-white">
-          <span>←</span> Catalogue
-        </a>
-        
-        {nextChapter ? (
-          <a href={`/manga/${manga.id}/chapitre-${nextChapter.number}`} 
-             class="px-12 py-4 font-black text-xs uppercase rounded-xl transition-all tracking-widest text-black shadow-xl hover:scale-105 active:scale-95" 
-             style={`background-color: ${yellow}`}>
-            Chapitre Suivant
-          </a>
-        ) : (
-          <button disabled class="px-12 py-4 font-bold text-xs uppercase rounded-xl bg-zinc-900 text-zinc-600 border border-zinc-800 cursor-not-allowed tracking-widest opacity-50">
-            Dernier Chapitre
-          </button>
-        )}
-      </div>
-    </div>
+    <footer class="mt-20 py-10 border-t border-zinc-900 text-center opacity-20">
+      <p class="text-[9px] uppercase tracking-[0.5em]">Rising Scan — {manga.id}</p>
+    </footer>
   </main>
-
-  <footer class="py-10 text-center border-t border-zinc-900 opacity-30">
-    <p class="text-[9px] uppercase tracking-[0.6em] text-white">Rising Scan Reader</p>
-  </footer>
-
 </Layout>
-
-<style>
-  /* Protection simple contre le clic droit/drag */
-  img {
-    -webkit-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    pointer-events: none;
-    -webkit-touch-callout: none;
-  }
-  
-  /* Animation d'entrée */
-  main {
-    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
