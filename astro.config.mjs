@@ -1,11 +1,9 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
-import vercel from '@astrojs/vercel'; // On importe l'adaptateur
+import vercel from '@astrojs/vercel';
 
 export default defineConfig({
-  // 'hybrid' permet de garder le site ultra rapide (statique) 
-  // tout en autorisant des fonctions serveur pour l'API.
-  output: 'hybrid', 
+  // On retire la ligne "output: 'hybrid'" car elle fait planter Astro 5
   adapter: vercel(), 
   vite: {
     plugins: [tailwindcss()],
