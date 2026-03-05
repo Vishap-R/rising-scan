@@ -11,8 +11,9 @@
   },
   "dependencies": {
     "astro": "^5.0.0",
-    "tailwindcss": "^4.2.1",
-    "@tailwindcss/vite": "^4.2.1",
-    "@astrojs/vercel": "^8.0.0"
+    "@astrojs/vercel": "^8.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "jszip": "^3.10.1"
   }
 }
