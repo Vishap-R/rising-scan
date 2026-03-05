@@ -2,55 +2,27 @@
 import Layout from '../layouts/Layout.astro';
 import mangasData from '../data/mangas.json';
 
-// Sécurité : on force mangasData à être un tableau pour éviter le crash du .map()
 const mangas = Array.isArray(mangasData) ? mangasData : [];
-
 const yellow = "#F9D71C";
 ---
 
 <Layout title="Rising Scan - Accueil">
   <main class="min-h-screen bg-[#0b0b0b] text-white p-6">
-    <header class="max-w-6xl mx-auto mb-12 flex justify-between items-center">
-      <h1 class="text-4xl font-black italic uppercase tracking-tighter" style={`color: ${yellow}`}>
-        ⚡ Rising Scan
-      </h1>
-      <a href="/admin" class="text-[10px] border border-zinc-700 px-4 py-2 rounded-full hover:bg-zinc-800 transition uppercase font-bold tracking-widest text-zinc-400">
-        Admin
-      </a>
-    </header>
-
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-6xl mx-auto mt-10">
       <h2 class="text-xl font-bold mb-8 flex items-center gap-4 uppercase italic tracking-widest">
         <span class="w-12 h-1 bg-yellow-400"></span> Dernières Sorties
       </h2>
 
       {mangas.length === 0 ? (
         <div class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-zinc-800 rounded-3xl">
-          <p class="text-zinc-500 italic">Aucune œuvre pour le moment...</p>
-          <p class="text-[10px] text-zinc-600 mt-2 uppercase">Utilise l'Admin Space pour commencer</p>
+          <p class="text-zinc-500 italic text-sm">Aucune œuvre pour le moment...</p>
         </div>
       ) : (
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {mangas.map((manga) => (
-            <a href={`/manga/${manga.id}`} class="group relative flex flex-col gap-3">
-              <div class="relative aspect-[3/4] overflow-hidden rounded-xl border-2 border-transparent group-hover:border-yellow-400 transition-all shadow-lg">
-                <img 
-                  src={manga.cover || 'https://via.placeholder.com/300x400?text=No+Cover'} 
-                  alt={manga.title}
-                  loading="lazy"
-                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                   <span class="text-xs font-black uppercase italic" style={`color: ${yellow}`}>Lire maintenant</span>
-                </div>
-              </div>
-              <h3 class="font-bold text-sm truncate uppercase tracking-tight group-hover:text-yellow-400 transition-colors">
-                {manga.title}
-              </h3>
-            </a>
-          ))}
+          {/* ... reste du code des mangas ... */}
         </div>
       )}
     </div>
   </main>
 </Layout>
+
