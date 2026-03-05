@@ -1,1 +1,22 @@
-[]
+{
+  "type": "json",
+  "mangaData": {
+    "id": "TFSOE",
+    "title": "The first sword on Earth",
+    "status": "Ongoing",
+    "chapters": [
+      {
+        "number": "1",
+        "title": "Chapitre 1",
+        "date": "05/03/2026",
+        "pages": [
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772720220/rising-scan/TFSOE/ch1/oqpe48seg2ytzbtofxiz.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772720222/rising-scan/TFSOE/ch1/b1ceewkhg2epmo7plcvd.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772720225/rising-scan/TFSOE/ch1/ujvxg13bfombui0ldvy7.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772720226/rising-scan/TFSOE/ch1/kpdokhdn4prxkzpaqind.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772720228/rising-scan/TFSOE/ch1/poj2y6sd7qi18pvfigxp.png"
+        ]
+      }
+    ]
+  }
+}
