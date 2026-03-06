@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "id": "TFSOE",
+    "title": "The first sword on Earth",
+    "status": "Ongoing",
+    "chapters": [
+      {
+        "number": "1",
+        "title": "Chapitre 1",
+        "date": "06/03/2026",
+        "pages": [
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772755597/rising-scan/TFSOE/ch1/page_1_ou8bau.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772755600/rising-scan/TFSOE/ch1/page_2_lq21mh.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772755605/rising-scan/TFSOE/ch1/page_3_ef5arh.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772755608/rising-scan/TFSOE/ch1/page_4_kk8r9c.png",
+          "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772755610/rising-scan/TFSOE/ch1/page_5_dnp6hr.png"
+        ]
+      }
+    ],
+    "cover": "https://res.cloudinary.com/dw6lou8mv/image/upload/v1772755594/rising-scan/TFSOE/assets/cover_zd5g2.jpg"
+  }
+]
