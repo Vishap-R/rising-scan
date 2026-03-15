@@ -1,69 +1,89 @@
-export const prerender = false;
+import type { APIRoute } from 'astro';
 
-export async function POST({ request }) {
-  const incomingData = await request.json();
-  
-  // Le manga envoyé depuis admin.astro (on extrait mangaData si présent)
-  const newManga = incomingData.mangaData || incomingData;
-
-  const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-  const REPO_OWNER = process.env.REPO_OWNER;
-  const REPO_NAME = process.env.REPO_NAME;
-  const FILE_PATH = "src/data/mangas.json";
-
+export const POST: APIRoute = async ({ request }) => {
   try {
-    // 1. Récupérer le fichier actuel sur GitHub pour avoir le contenu et le SHA
-    const getFile = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
-      headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
-    });
+    const incomingData = await request.json();
     
-    let currentMangas = [];
-    let sha = null;
+    // Configuration GitHub (Remplace par tes vraies infos si nécessaire)
+    const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+    const REPO_OWNER = "Vishap-R";
+    const REPO_NAME = "rising-scan";
+    const FILE_PATH = "src/data/mangas.json";
 
-    if (getFile.ok) {
-      const fileData = await getFile.json();
-      sha = fileData.sha;
-      // Décoder le contenu Base64 existant
-      const content = decodeURIComponent(escape(atob(fileData.content)));
-      const parsed = JSON.parse(content);
+    // 1. Récupérer le fichier actuel et son SHA (nécessaire pour modifier sur GitHub)
+    const getFileRes = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,
+      {
+        headers: { Authorization: `Bearer ${GITHUB_TOKEN}` }
+      }
+    );
+
+    if (!getFileRes.ok) {
+      return new Response(JSON.stringify({ error: "Impossible de lire le fichier JSON sur GitHub" }), { status: 500 });
+    }
+
+    const fileData = await getFileRes.json();
+    const sha = fileData.sha;
+    // Décodage du contenu Base64 en JSON utilisable
+    let currentContent = JSON.parse(atob(fileData.content));
+
+    // S'assurer que c'est un tableau
+    if (!Array.isArray(currentContent)) {
+      currentContent = [];
+    }
+
+    let updatedContent;
+    let commitMessage;
+
+    // 2. LOGIQUE DE MISE À JOUR OU SUPPRESSION
+    if (incomingData.action === "DELETE") {
+      // Action : SUPPRIMER
+      updatedContent = currentContent.filter((m: any) => m.id !== incomingData.id);
+      commitMessage = `Admin: Suppression du manga ${incomingData.id}`;
+    } else {
+      // Action : AJOUTER (ou mettre à jour si l'ID existe déjà)
+      const index = currentContent.findIndex((m: any) => m.id === incomingData.id);
       
-      // On s'assure que c'est un tableau
-      currentMangas = Array.isArray(parsed) ? parsed : [parsed];
+      if (index !== -1) {
+        // Si le manga existe déjà, on met à jour ses infos sans toucher aux chapitres existants
+        currentContent[index] = { 
+          ...currentContent[index], 
+          ...incomingData,
+          chapters: currentContent[index].chapters || [] 
+        };
+      } else {
+        // Nouveau manga
+        currentContent.push(incomingData);
+      }
+      updatedContent = currentContent;
+      commitMessage = `Admin: Mise à jour/Ajout du manga ${incomingData.title}`;
     }
 
-    // 2. Fusionner les données : Ajouter le nouveau ou mettre à jour s'il existe
-    const index = currentMangas.findIndex(m => m.id === newManga.id);
-    if (index !== -1) {
-      currentMangas[index] = newManga; // Mise à jour si l'ID existe déjà
-    } else {
-      currentMangas.push(newManga); // Ajout à la liste
+    // 3. Renvoyer le fichier mis à jour vers GitHub
+    const putFileRes = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: commitMessage,
+          content: btoa(unescape(encodeURIComponent(JSON.stringify(updatedContent, null, 2)))),
+          sha: sha,
+        }),
+      }
+    );
+
+    if (!putFileRes.ok) {
+      const errorText = await putFileRes.text();
+      return new Response(JSON.stringify({ error: "Échec de l'écriture sur GitHub", details: errorText }), { status: 500 });
     }
 
-    // 3. Préparer le nouveau contenu en JSON propre
-    const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(currentMangas, null, 2))));
+    return new Response(JSON.stringify({ message: "Succès !" }), { status: 200 });
 
-    // 4. Envoyer la mise à jour à GitHub
-    const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: `Mise à jour : ${newManga.title}`,
-        content: newContent,
-        sha: sha // Obligatoire pour mettre à jour un fichier existant
-      })
-    });
-
-    if (response.ok) {
-      return new Response(JSON.stringify({ success: true }), { status: 200 });
-    } else {
-      const errorDetail = await response.json();
-      return new Response(JSON.stringify({ error: "GitHub Error", detail: errorDetail }), { status: 500 });
-    }
-
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-}
+};
