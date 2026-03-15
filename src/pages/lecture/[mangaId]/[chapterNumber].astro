@@ -1,0 +1,121 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import mangasData from '../../../data/mangas.json';
+
+export async function getStaticPaths() {
+  const rawData = mangasData?.default || mangasData;
+  if (!rawData) return [];
+  const mangasArray = Array.isArray(rawData) ? rawData : [rawData];
+  
+  const paths = [];
+  
+  mangasArray.forEach(manga => {
+    if (manga.chapters) {
+      manga.chapters.forEach(chapter => {
+        paths.push({
+          params: { 
+            mangaId: manga.id.toString(), 
+            chapterNumber: chapter.number.toString() 
+          },
+          props: { manga, chapter }
+        });
+      });
+    }
+  });
+  
+  return paths;
+}
+
+const { manga, chapter } = Astro.props;
+const yellow = "#F9D71C";
+
+// Navigation : Trouver le chapitre précédent et suivant
+const currentNum = parseInt(chapter.number);
+const nextChapter = manga.chapters.find(ch => parseInt(ch.number) === currentNum + 1);
+const prevChapter = manga.chapters.find(ch => parseInt(ch.number) === currentNum - 1);
+---
+
+<Layout title={`${manga.title} - Chapitre ${chapter.number}`}>
+  <main class="min-h-screen bg-black text-white">
+    
+    <nav class="sticky top-0 z-50 bg-[#0b0b0b]/90 backdrop-blur-md border-b border-zinc-800 p-4">
+      <div class="max-w-5xl mx-auto flex justify-between items-center">
+        <div class="flex flex-col">
+          <a href={`/manga/${manga.id}`} class="text-[10px] text-zinc-500 hover:text-white uppercase font-black tracking-widest transition-colors">
+            ← Retour à l'œuvre
+          </a>
+          <h1 class="text-sm font-bold truncate max-w-[200px] sm:max-w-none">
+            {manga.title} <span style={`color: ${yellow}`}>#Ch.{chapter.number}</span>
+          </h1>
+        </div>
+
+        <div class="flex items-center gap-2">
+           {prevChapter && (
+             <a href={`/lecture/${manga.id}/${prevChapter.number}`} class="p-2 bg-zinc-900 rounded-lg border border-zinc-800 hover:border-yellow-400 transition-all">
+               <span class="sr-only">Précédent</span> ⬅️
+             </a>
+           )}
+           <select 
+             onchange={`window.location.href='/lecture/${manga.id}/' + this.value`}
+             class="bg-zinc-900 border border-zinc-700 text-[10px] font-bold uppercase p-2 rounded outline-none cursor-pointer"
+           >
+             {manga.chapters.map(ch => (
+               <option value={ch.number} selected={ch.number === chapter.number}>
+                 Chapitre {ch.number}
+               </option>
+             ))}
+           </select>
+           {nextChapter && (
+             <a href={`/lecture/${manga.id}/${nextChapter.number}`} class="p-2 bg-zinc-900 rounded-lg border border-zinc-800 hover:border-yellow-400 transition-all">
+               <span class="sr-only">Suivant</span> ➡️
+             </a>
+           )}
+        </div>
+      </div>
+    </nav>
+
+    <div class="max-w-3xl mx-auto flex flex-col items-center bg-black">
+      {chapter.pages.map((page, index) => (
+        <img 
+          src={page} 
+          alt={`Page ${index + 1}`} 
+          loading="lazy" 
+          decoding="async"
+          class="w-full h-auto block select-none pointer-events-none"
+          onerror="this.src='https://via.placeholder.com/800x1200?text=Erreur+Image'"
+        />
+      ))}
+    </div>
+
+    <div class="py-20 text-center bg-[#0b0b0b] border-t border-zinc-900">
+      <p class="text-zinc-500 text-xs uppercase font-bold tracking-[0.3em] mb-6">Fin du chapitre {chapter.number}</p>
+      
+      <div class="flex flex-col sm:flex-row justify-center gap-4 px-6">
+        {nextChapter ? (
+          <a 
+            href={`/lecture/${manga.id}/${nextChapter.number}`} 
+            class="px-12 py-4 font-black text-xs uppercase rounded-xl transition-all tracking-widest text-black shadow-xl"
+            style={`background-color: ${yellow}`}
+          >
+            Chapitre Suivant ({nextChapter.number})
+          </a>
+        ) : (
+          <div class="px-12 py-4 bg-zinc-900 text-zinc-600 rounded-xl font-bold text-xs uppercase border border-zinc-800">
+            Dernier chapitre atteint
+          </div>
+        )}
+        <a href="/" class="px-12 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-bold text-xs uppercase transition-all tracking-widest">
+          Retour au Catalogue
+        </a>
+      </div>
+    </div>
+
+  </main>
+</Layout>
+
+<style>
+  /* Amélioration de la fluidité du scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+</style>
