@@ -2,105 +2,244 @@
 import Layout from '../layouts/Layout.astro';
 import mangasData from '../data/mangas.json';
 
-const currentMangas = Array.isArray(mangasData) ? mangasData : (mangasData?.default || []);
+// Récupération sécurisée des données du catalogue
+const rawData = mangasData?.default || mangasData;
+const currentMangas = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
 const yellow = "#F9D71C";
 ---
 
 <Layout title="Admin Space - Rising Scan">
   <main class="min-h-screen bg-[#0b0b0b] text-white p-6 md:p-12">
-    <div class="max-w-4xl mx-auto">
-      <h1 class="text-3xl font-black uppercase italic mb-8">Admin <span style={`color: ${yellow}`}>Turbo</span></h1>
-
-      <div id="drop-zone" class="border-2 border-dashed border-zinc-800 rounded-3xl p-12 text-center hover:border-yellow-400 transition-all cursor-pointer bg-zinc-900/20 group">
-        <input type="file" id="zip-input" accept=".zip" class="hidden" />
-        <p id="drop-text" class="text-sm font-bold uppercase tracking-widest text-zinc-400 group-hover:text-white"> Glissez votre fichier <span class="text-yellow-400">.ZIP</span> ici </p>
+    <div class="max-w-6xl mx-auto">
+      
+      <div class="flex justify-between items-center mb-12 border-b border-zinc-800 pb-6">
+        <div>
+          <h1 class="text-3xl font-black uppercase italic tracking-tighter">
+            Admin <span style={`color: ${yellow}`}>Space</span>
+          </h1>
+          <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">Gestion Turbo & Automation</p>
+        </div>
+        <button id="exportData" class="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-bold uppercase hover:bg-zinc-800 transition-all text-zinc-400">
+          📥 Sauvegarde JSON
+        </button>
       </div>
 
-      <div id="config-panel" class="mt-8 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 hidden space-y-4">
-        <div class="grid grid-cols-2 gap-4">
-          <select id="mangaId" class="bg-black border border-zinc-800 rounded-xl p-3 text-sm outline-none">
-            {currentMangas.map((m: any) => <option value={m.id}>{m.title}</option>)}
-          </select>
-          <input type="number" id="chNumber" placeholder="N° Chapitre" class="bg-black border border-zinc-800 rounded-xl p-3 text-sm outline-none" />
-        </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        
+        <div class="lg:col-span-1 space-y-6">
+          
+          <div class="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+            <button onclick="switchTab('manga')" id="btn-manga" class="flex-1 py-2 text-[9px] font-black uppercase rounded-lg bg-yellow-400 text-black transition-all">Nouveau Manga</button>
+            <button onclick="switchTab('zip')" id="btn-zip" class="flex-1 py-2 text-[9px] font-black uppercase rounded-lg text-zinc-500 hover:text-white transition-all">Upload ZIP</button>
+          </div>
 
-        <div id="status-bar" class="hidden space-y-2">
-            <div class="flex justify-between text-[10px] font-bold uppercase text-yellow-400">
-                <span id="st-text">Prêt</span>
-                <span id="st-perc">0%</span>
+          <div id="pane-manga" class="bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800 shadow-xl">
+            <h2 class="text-[10px] font-black uppercase mb-4 text-yellow-400">✨ Ajouter une œuvre</h2>
+            <form id="mangaForm" class="space-y-4">
+              <input type="hidden" name="action" value="CREATE_MANGA" />
+              <input type="text" name="id" placeholder="ID (ex: solo-leveling)" required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm focus:border-yellow-400 outline-none transition-all" />
+              <input type="text" name="title" placeholder="Titre de l'œuvre" required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm focus:border-yellow-400 outline-none transition-all" />
+              <input type="url" name="cover" placeholder="URL de la Cover (Cloudinary)" required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm focus:border-yellow-400 outline-none transition-all" />
+              <button type="submit" class="w-full py-4 font-black uppercase rounded-xl text-black text-[10px] bg-yellow-400 shadow-lg hover:brightness-110 active:scale-95 transition-all">Publier l'œuvre</button>
+            </form>
+          </div>
+
+          <div id="pane-zip" class="hidden space-y-4">
+            <div id="drop-zone" class="border-2 border-dashed border-zinc-800 rounded-2xl p-10 text-center bg-zinc-900/30 hover:border-yellow-400 cursor-pointer transition-all group">
+              <input type="file" id="zip-input" accept=".zip" class="hidden" />
+              <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">📦</div>
+              <p id="drop-text" class="text-[10px] font-bold uppercase text-zinc-500 group-hover:text-white">Glisser le .ZIP ici</p>
             </div>
-            <div class="h-1 bg-zinc-800 rounded-full overflow-hidden"><div id="prog-bar" class="h-full bg-yellow-400 w-0 transition-all"></div></div>
+            
+            <div id="zip-config" class="bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800 hidden space-y-4">
+              <div>
+                <label class="text-[9px] uppercase font-bold text-zinc-600 ml-1">Manga cible</label>
+                <select id="mangaTarget" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm outline-none mt-1">
+                  {currentMangas.map((m: any) => <option value={m.id}>{m.title}</option>)}
+                </select>
+              </div>
+              <div>
+                <label class="text-[9px] uppercase font-bold text-zinc-600 ml-1">Numéro du Chapitre</label>
+                <input type="number" id="chNum" placeholder="Ex: 15" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm outline-none mt-1" />
+              </div>
+              
+              <div id="progress-container" class="hidden space-y-2 pt-2">
+                <div class="flex justify-between text-[9px] font-black text-yellow-400 uppercase">
+                  <span id="prog-text">Préparation...</span>
+                  <span id="prog-perc">0%</span>
+                </div>
+                <div class="h-1 bg-zinc-800 rounded-full overflow-hidden">
+                  <div id="prog-bar" class="h-full bg-yellow-400 w-0 transition-all duration-300"></div>
+                </div>
+              </div>
+
+              <button id="uploadZipBtn" class="w-full py-4 bg-yellow-400 text-black font-black uppercase text-[10px] rounded-xl shadow-lg hover:brightness-110 transition-all">Lancer l'Upload</button>
+            </div>
+          </div>
         </div>
 
-        <button id="start-upload" class="w-full py-4 bg-yellow-400 text-black font-black uppercase text-[10px] rounded-xl shadow-lg">Extraire & Upload</button>
+        <div class="lg:col-span-2">
+          <h2 class="text-[10px] font-black uppercase mb-6 text-zinc-500 italic">Catalogue Actuel ({currentMangas.length})</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {currentMangas.map((manga: any) => (
+              <div class="bg-zinc-900/30 border border-zinc-800 p-4 rounded-2xl flex gap-4 group hover:border-zinc-500 transition-all">
+                <div class="w-16 h-20 bg-zinc-800 rounded-lg overflow-hidden flex-shrink-0 border border-zinc-800">
+                   <img src={manga.cover} class="w-full h-full object-cover" alt="" loading="lazy" />
+                </div>
+                <div class="flex-1 flex flex-col justify-between py-1">
+                  <div>
+                    <h3 class="font-bold text-sm truncate uppercase tracking-tight">{manga.title}</h3>
+                    <p class="text-[9px] font-black uppercase text-yellow-400">{manga.chapters?.length || 0} Chapitres</p>
+                  </div>
+                  <div class="flex gap-4">
+                    <button onclick={`deleteManga('${manga.id}')`} class="text-[9px] font-bold uppercase text-red-500/50 hover:text-red-500 transition-colors">Supprimer</button>
+                    <a href={`/manga/${manga.id}`} target="_blank" class="text-[9px] font-bold uppercase text-zinc-600 hover:text-white transition-colors">Voir</a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   </main>
-</Layout>
 
-<script>
-  import JSZip from 'jszip';
+  <script id="raw-data" type="application/json" is:inline>{JSON.stringify(currentMangas)}</script>
 
-  const zipInput = document.getElementById('zip-input') as HTMLInputElement;
-  const dropZone = document.getElementById('drop-zone');
-  const configPanel = document.getElementById('config-panel');
-  let selectedFile: File | null = null;
+  <script>
+    import JSZip from 'jszip';
 
-  // Remplace par tes infos Cloudinary
-  const CLOUD_NAME = "TON_CLOUD_NAME"; 
-  const UPLOAD_PRESET = "TON_PRESET_UNSIGNED"; 
+    // 1. CONFIGURATION (Variables d'environnement)
+    const CLOUD_NAME = import.meta.env.PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const UPLOAD_PRESET = "rising_upload"; // Assure-toi qu'il est "Unsigned" sur Cloudinary
 
-  dropZone?.addEventListener('click', () => zipInput.click());
-  zipInput.addEventListener('change', (e: any) => handleFile(e.target.files[0]));
-  dropZone?.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = "#F9D71C"; });
-  dropZone?.addEventListener('drop', (e: any) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); });
+    // 2. GESTION DES ONGLETS
+    window.switchTab = (tab: string) => {
+      const isManga = tab === 'manga';
+      document.getElementById('pane-manga')!.classList.toggle('hidden', !isManga);
+      document.getElementById('pane-zip')!.classList.toggle('hidden', isManga);
+      document.getElementById('btn-manga')!.className = isManga ? 'flex-1 py-2 text-[9px] font-black uppercase rounded-lg bg-yellow-400 text-black' : 'flex-1 py-2 text-[9px] font-black uppercase rounded-lg text-zinc-500';
+      document.getElementById('btn-zip')!.className = !isManga ? 'flex-1 py-2 text-[9px] font-black uppercase rounded-lg bg-yellow-400 text-black' : 'flex-1 py-2 text-[9px] font-black uppercase rounded-lg text-zinc-500';
+    };
 
-  function handleFile(file: File) {
-    if (file?.name.endsWith('.zip')) {
-      selectedFile = file;
-      configPanel?.classList.remove('hidden');
-      document.getElementById('drop-text')!.innerText = `Fichier prêt : ${file.name}`;
-    }
-  }
+    // 3. LOGIQUE ZIP & UPLOAD
+    const zipInput = document.getElementById('zip-input') as HTMLInputElement;
+    const dropZone = document.getElementById('drop-zone');
+    let selectedZip: File | null = null;
 
-  document.getElementById('start-upload')?.addEventListener('click', async () => {
-    if (!selectedFile) return;
-    const mId = (document.getElementById('mangaId') as HTMLSelectElement).value;
-    const chNum = (document.getElementById('chNumber') as HTMLInputElement).value;
-    
-    const bar = document.getElementById('prog-bar');
-    const stText = document.getElementById('st-text');
-    document.getElementById('status-bar')?.classList.remove('hidden');
+    dropZone?.addEventListener('click', () => zipInput.click());
+    zipInput.addEventListener('change', (e: any) => handleZip(e.target.files[0]));
+    dropZone?.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = "#F9D71C"; });
+    dropZone?.addEventListener('dragleave', () => { dropZone.style.borderColor = ""; });
+    dropZone?.addEventListener('drop', (e: any) => { e.preventDefault(); handleZip(e.dataTransfer.files[0]); });
 
-    try {
-      const zip = new JSZip();
-      const zipData = await zip.loadAsync(selectedFile);
-      const images = Object.keys(zipData.files).filter(f => f.match(/\.(jpg|jpeg|png|webp)$/i)).sort();
-      const urls = [];
-
-      for (let i = 0; i < images.length; i++) {
-        const blob = await zipData.files[images[i]].async("blob");
-        const fd = new FormData();
-        fd.append('file', blob);
-        fd.append('upload_preset', UPLOAD_PRESET);
-
-        stText!.innerText = `Upload ${i+1}/${images.length}`;
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
-        const data = await res.json();
-        
-        if (data.secure_url) urls.push(data.secure_url);
-        bar!.style.width = `${Math.round(((i+1)/images.length)*100)}%`;
+    function handleZip(file: File) {
+      if (file?.name.endsWith('.zip')) {
+        selectedZip = file;
+        document.getElementById('zip-config')!.classList.remove('hidden');
+        document.getElementById('drop-text')!.innerText = `Prêt : ${file.name}`;
       }
+    }
 
-      // Envoi à l'API GitHub
+    document.getElementById('uploadZipBtn')?.addEventListener('click', async () => {
+      if (!selectedZip || !CLOUD_NAME) return alert("Fichier ou Config Cloud Name manquant !");
+      
+      const mangaId = (document.getElementById('mangaTarget') as HTMLSelectElement).value;
+      const chNum = (document.getElementById('chNum') as HTMLInputElement).value;
+      if(!chNum) return alert("Précise le numéro du chapitre");
+
+      const progCont = document.getElementById('progress-container');
+      const progBar = document.getElementById('prog-bar');
+      const progText = document.getElementById('prog-text');
+      const progPerc = document.getElementById('prog-perc');
+
+      progCont?.classList.remove('hidden');
+
+      try {
+        const zip = new JSZip();
+        const zipContent = await zip.loadAsync(selectedZip);
+        const images = Object.keys(zipContent.files)
+          .filter(f => f.match(/\.(jpg|jpeg|png|webp)$/i) && !f.includes('__MACOSX'))
+          .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        
+        const imageUrls: string[] = [];
+
+        for (let i = 0; i < images.length; i++) {
+          const blob = await zipContent.files[images[i]].async("blob");
+          const fd = new FormData();
+          fd.append('file', blob);
+          fd.append('upload_preset', UPLOAD_PRESET);
+
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+          const json = await res.json();
+          
+          if (json.secure_url) {
+            imageUrls.push(json.secure_url);
+          }
+
+          const p = Math.round(((i + 1) / images.length) * 100);
+          progBar!.style.width = `${p}%`;
+          progPerc!.innerText = `${p}%`;
+          progText!.innerText = `Upload ${i+1}/${images.length}`;
+        }
+
+        // Envoi final à l'API GitHub
+        const finalRes = await fetch('/api/update-mangas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: "ADD_CHAPTER", 
+            mangaId, 
+            chapter: { 
+              number: chNum, 
+              title: `Chapitre ${chNum}`, 
+              date: new Date().toLocaleDateString(), 
+              pages: imageUrls 
+            } 
+          })
+        });
+
+        if (finalRes.ok) {
+          alert("✅ Chapitre ajouté !");
+          window.location.reload();
+        }
+      } catch (e) {
+        alert("Erreur d'upload. Vérifie ta console.");
+        console.error(e);
+      }
+    });
+
+    // 4. SUPPRESSION & EXPORT
+    (window as any).deleteManga = async (id: string) => {
+      if (!confirm(`Supprimer définitivement ${id} ?`)) return;
       await fetch('/api/update-mangas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: "ADD_CHAPTER", mangaId: mId, chapter: { number: chNum, pages: urls, date: new Date().toLocaleDateString() } })
+        body: JSON.stringify({ action: "DELETE", id })
       });
-
-      alert("Succès !");
       window.location.reload();
-    } catch (err) { alert("Erreur : " + err); }
-  });
-</script>
+    };
+
+    document.getElementById('mangaForm')?.addEventListener('submit', async (e: any) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = Object.fromEntries(fd.entries());
+      await fetch('/api/update-mangas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      window.location.reload();
+    });
+
+    document.getElementById('exportData')?.addEventListener('click', () => {
+      const raw = document.getElementById('raw-data')!.textContent;
+      const blob = new Blob([JSON.stringify(JSON.parse(raw!), null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `backup_mangas_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+    });
+  </script>
+</Layout>
