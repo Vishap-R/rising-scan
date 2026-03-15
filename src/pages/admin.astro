@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import mangasData from '../data/mangas.json';
 
-// Récupération des mangas existants pour le Dashboard
+// Récupération sécurisée des données
 const rawData = mangasData?.default || mangasData;
 const currentMangas = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
 
@@ -10,152 +10,178 @@ const yellow = "#F9D71C";
 ---
 
 <Layout title="Admin Space - Rising Scan">
-  <main class="min-h-screen bg-[#0b0b0b] text-white p-4 md:p-10">
-    
+  <div id="admin-gate" class="fixed inset-0 bg-black z-[100] flex items-center justify-center">
+    <div class="text-center space-y-4">
+      <div class="text-4xl">⚡</div>
+      <h2 class="text-xl font-black uppercase italic tracking-tighter text-white">Accès Restreint</h2>
+      <p class="text-zinc-500 text-xs uppercase font-bold">Rising Scan Administration</p>
+    </div>
+  </div>
+
+  <main id="admin-content" class="min-h-screen bg-[#0b0b0b] text-white p-4 md:p-10 opacity-0 transition-opacity duration-500">
     <div class="max-w-6xl mx-auto">
-      <div class="flex justify-between items-center mb-12 border-b border-zinc-800 pb-6">
+      
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 border-b border-zinc-800 pb-6 gap-4">
         <div>
           <h1 class="text-3xl font-black uppercase italic tracking-tighter">
             Admin <span style={`color: ${yellow}`}>Space</span>
           </h1>
-          <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1">Gestion du catalogue</p>
+          <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">Édition & Gestion du catalogue</p>
         </div>
-        <button id="exportData" class="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-bold uppercase hover:bg-zinc-800 transition-all">
-          📥 Export Backup (JSON)
-        </button>
+        <div class="flex gap-3">
+          <button id="exportData" class="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-bold uppercase hover:bg-zinc-800 transition-all text-zinc-400 hover:text-white">
+            📥 Sauvegarde JSON
+          </button>
+          <button onclick="sessionStorage.clear(); window.location.reload();" class="px-4 py-2 bg-red-900/20 border border-red-900/50 rounded-lg text-[10px] font-bold uppercase text-red-500 hover:bg-red-900/40 transition-all">
+            Déconnexion
+          </button>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
         
-        <div class="lg:col-span-1 space-y-6">
-          <div class="bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800 shadow-xl">
-            <h2 class="text-sm font-black uppercase mb-6 flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full" style={`background-color: ${yellow}`}></span>
-              Ajouter une œuvre
+        <div class="lg:col-span-1">
+          <div class="bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800 shadow-xl sticky top-24">
+            <h2 class="text-xs font-black uppercase mb-6 flex items-center gap-2 italic">
+              <span class="w-2 h-2 rounded-full animate-pulse" style={`background-color: ${yellow}`}></span>
+              Nouvelle œuvre
             </h2>
             
             <form id="mangaForm" class="space-y-4">
-              <div>
-                <label class="block text-[10px] uppercase font-bold text-zinc-500 mb-1">ID Unique (ex: TFSOE)</label>
-                <input type="text" name="id" required class="w-full bg-black border border-zinc-800 rounded-lg p-3 text-sm focus:border-yellow-400 outline-none transition-all" />
+              <div class="space-y-1">
+                <label class="text-[9px] uppercase font-bold text-zinc-500 ml-1">ID Unique (ex: TFSOE)</label>
+                <input type="text" name="id" placeholder="ID sans espaces" required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm focus:border-yellow-400 outline-none transition-all placeholder:text-zinc-800" />
               </div>
-              <div>
-                <label class="block text-[10px] uppercase font-bold text-zinc-500 mb-1">Titre du Manga</label>
-                <input type="text" name="title" required class="w-full bg-black border border-zinc-800 rounded-lg p-3 text-sm focus:border-yellow-400 outline-none transition-all" />
+              <div class="space-y-1">
+                <label class="text-[9px] uppercase font-bold text-zinc-500 ml-1">Titre</label>
+                <input type="text" name="title" placeholder="Nom du manga" required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm focus:border-yellow-400 outline-none transition-all placeholder:text-zinc-800" />
               </div>
-              <div>
-                <label class="block text-[10px] uppercase font-bold text-zinc-500 mb-1">URL Cover (Cloudinary)</label>
-                <input type="url" name="cover" required class="w-full bg-black border border-zinc-800 rounded-lg p-3 text-sm focus:border-yellow-400 outline-none transition-all" />
+              <div class="space-y-1">
+                <label class="text-[9px] uppercase font-bold text-zinc-500 ml-1">Lien de la Cover</label>
+                <input type="url" name="cover" placeholder="https://res.cloudinary.com/..." required class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm focus:border-yellow-400 outline-none transition-all placeholder:text-zinc-800" />
               </div>
-              <div>
-                <label class="block text-[10px] uppercase font-bold text-zinc-500 mb-1">Synopsis</label>
-                <textarea name="description" rows="4" class="w-full bg-black border border-zinc-800 rounded-lg p-3 text-sm focus:border-yellow-400 outline-none transition-all resize-none"></textarea>
+              <div class="space-y-1">
+                <label class="text-[9px] uppercase font-bold text-zinc-500 ml-1">Synopsis</label>
+                <textarea name="description" rows="5" placeholder="Résumé de l'histoire..." class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm focus:border-yellow-400 outline-none transition-all resize-none placeholder:text-zinc-800"></textarea>
               </div>
 
-              <button type="submit" class="w-full py-4 font-black uppercase tracking-widest rounded-xl text-black text-xs transition-transform active:scale-95 shadow-lg" style={`background-color: ${yellow}`}>
-                Publier l'œuvre
+              <button type="submit" class="w-full py-4 font-black uppercase tracking-widest rounded-xl text-black text-[10px] transition-all active:scale-95 shadow-lg hover:brightness-110" style={`background-color: ${yellow}`}>
+                Enregistrer sur GitHub
               </button>
             </form>
           </div>
         </div>
 
         <div class="lg:col-span-2">
-          <h2 class="text-sm font-black uppercase mb-6 flex items-center gap-2 text-zinc-400">
-            Catalogue Actuel ({currentMangas.length})
-          </h2>
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xs font-black uppercase flex items-center gap-2 text-zinc-400 italic">
+              Catalogue en ligne <span class="text-zinc-700">/</span> {currentMangas.length}
+            </h2>
+          </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {currentMangas.map((manga) => (
-              <div class="bg-zinc-900/30 border border-zinc-800 p-4 rounded-xl flex gap-4 group hover:border-zinc-600 transition-all">
-                <img src={manga.cover} class="w-16 h-20 object-cover rounded-lg shadow-lg" alt="" />
-                <div class="flex-1 flex flex-col justify-between">
+              <div class="bg-zinc-900/30 border border-zinc-800 p-4 rounded-2xl flex gap-4 group hover:border-zinc-500 transition-all">
+                <div class="w-20 h-24 flex-shrink-0 rounded-xl overflow-hidden shadow-lg border border-zinc-800">
+                   <img src={manga.cover} class="w-full h-full object-cover" alt="" loading="lazy" />
+                </div>
+                <div class="flex-1 flex flex-col justify-between py-1">
                   <div>
-                    <h3 class="font-bold text-sm truncate">{manga.title}</h3>
-                    <p class="text-[10px] text-zinc-500 uppercase font-black">{manga.chapters?.length || 0} Chapitres</p>
+                    <h3 class="font-bold text-sm truncate uppercase tracking-tight">{manga.title}</h3>
+                    <p class="text-[9px] text-zinc-600 uppercase font-black tracking-tighter" style={`color: ${yellow}`}>
+                      {manga.chapters?.length || 0} Chapitres
+                    </p>
                   </div>
-                  <div class="flex gap-2">
-                    <button onclick={`deleteManga('${manga.id}')`} class="text-[9px] font-bold uppercase text-red-500 hover:text-red-400 transition-colors">
+                  <div class="flex gap-4">
+                    <button onclick={`deleteManga('${manga.id}')`} class="text-[9px] font-bold uppercase text-red-500/50 hover:text-red-500 transition-colors">
                       Supprimer
                     </button>
+                    <a href={`/manga/${manga.id}`} target="_blank" class="text-[9px] font-bold uppercase text-zinc-600 hover:text-white transition-colors">
+                      Voir
+                    </a>
                   </div>
                 </div>
               </div>
             ))}
-            
-            {currentMangas.length === 0 && (
-              <div class="col-span-full py-20 border-2 border-dashed border-zinc-800 rounded-2xl text-center">
-                <p class="text-zinc-600 text-xs font-bold uppercase tracking-widest">Aucun manga dans le catalogue</p>
-              </div>
-            )}
           </div>
         </div>
-
       </div>
     </div>
   </main>
-</Layout>
 
-<script is:inline>
-  // 1. GESTION DE L'AJOUT
-  const form = document.getElementById('mangaForm');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(form);
-    const data = {
-      id: formData.get('id'),
-      title: formData.get('title'),
-      cover: formData.get('cover'),
-      description: formData.get('description'),
-      status: "En cours",
-      chapters: [] // Initialise avec 0 chapitres
+  <script id="mangas-data-raw" type="application/json" is:inline>
+    {JSON.stringify(currentMangas)}
+  </script>
+
+  <script is:inline>
+    // --- SÉCURITÉ ADMIN ---
+    const ADMIN_PASS = "MOT_DE_PASSE"; // CHANGE-LE ICI
+
+    function authenticate() {
+      const isAuth = sessionStorage.getItem('rising_admin_token');
+      if (isAuth === ADMIN_PASS) {
+        document.getElementById('admin-gate').classList.add('hidden');
+        document.getElementById('admin-content').classList.replace('opacity-0', 'opacity-100');
+      } else {
+        const pass = prompt("Mot de passe requis :");
+        if (pass === ADMIN_PASS) {
+          sessionStorage.setItem('rising_admin_token', ADMIN_PASS);
+          authenticate();
+        } else {
+          alert("Accès refusé.");
+          window.location.href = "/";
+        }
+      }
+    }
+    authenticate();
+
+    // --- LOGIQUE API ---
+    const form = document.getElementById('mangaForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const data = {
+        id: fd.get('id'),
+        title: fd.get('title'),
+        cover: fd.get('cover'),
+        description: fd.get('description'),
+        status: "En cours",
+        chapters: []
+      };
+
+      if (!confirm(`Publier ${data.title} ?`)) return;
+
+      try {
+        const res = await fetch('/api/update-mangas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) { window.location.reload(); }
+      } catch (err) { alert(err.message); }
+    });
+
+    window.deleteManga = async (id) => {
+      if (!confirm(`Supprimer définitivement ${id} ?`)) return;
+      try {
+        const res = await fetch('/api/update-mangas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: "DELETE", id })
+        });
+        if (res.ok) window.location.reload();
+      } catch (err) { alert(err.message); }
     };
 
-    if(!confirm(`Confirmer la publication de : ${data.title} ?`)) return;
-
-    try {
-      const response = await fetch('/api/update-mangas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (response.ok) {
-        alert("🎉 Manga ajouté avec succès ! Redémarrage du build...");
-        window.location.reload();
-      }
-    } catch (err) {
-      alert("Erreur : " + err.message);
-    }
-  });
-
-  // 2. GESTION DE LA SUPPRESSION
-  window.deleteManga = async (id) => {
-    if (!confirm(`⚠️ Êtes-vous sûr de vouloir supprimer définitivement ${id} ?`)) return;
-
-    try {
-      const response = await fetch('/api/update-mangas', {
-        method: 'POST', // On utilise POST avec une action spécifique
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: "DELETE", id: id })
-      });
-      if (response.ok) {
-        alert("🗑️ Manga supprimé !");
-        window.location.reload();
-      }
-    } catch (err) {
-      alert("Erreur lors de la suppression");
-    }
-  };
-
-  // 3. EXPORT DES DONNÉES (Sécurité LocalStorage)
-  document.getElementById('exportData').addEventListener('click', () => {
-    // Note: Dans un vrai cas, on ferait un fetch du JSON actuel
-    // Ici, on propose de télécharger les données chargées
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.__MANGAS_DATA__ || [], null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "rising_scan_backup.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  });
-</script>
+    // --- EXPORT JSON (LocalStorage safety) ---
+    document.getElementById('exportData').addEventListener('click', () => {
+      const raw = document.getElementById('mangas-data-raw').textContent;
+      const blob = new Blob([JSON.stringify(JSON.parse(raw), null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_rising_scan_${new Date().toLocaleDateString()}.json`;
+      a.click();
+    });
+  </script>
+</Layout>
