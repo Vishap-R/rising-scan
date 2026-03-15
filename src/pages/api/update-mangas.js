@@ -1,16 +1,14 @@
-import type { APIRoute } from 'astro';
-
-export const POST: APIRoute = async ({ request }) => {
+export const POST = async ({ request }) => {
   try {
     const incomingData = await request.json();
     
-    // Configuration GitHub (Remplace par tes vraies infos si nécessaire)
+    // Configuration GitHub
     const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
     const REPO_OWNER = "Vishap-R";
     const REPO_NAME = "rising-scan";
     const FILE_PATH = "src/data/mangas.json";
 
-    // 1. Récupérer le fichier actuel et son SHA (nécessaire pour modifier sur GitHub)
+    // 1. Récupérer le fichier actuel sur GitHub
     const getFileRes = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,
       {
@@ -19,15 +17,15 @@ export const POST: APIRoute = async ({ request }) => {
     );
 
     if (!getFileRes.ok) {
-      return new Response(JSON.stringify({ error: "Impossible de lire le fichier JSON sur GitHub" }), { status: 500 });
+      return new Response(JSON.stringify({ error: "Impossible de lire le JSON sur GitHub" }), { status: 500 });
     }
 
     const fileData = await getFileRes.json();
     const sha = fileData.sha;
-    // Décodage du contenu Base64 en JSON utilisable
-    let currentContent = JSON.parse(atob(fileData.content));
+    
+    // Décodage Base64 vers JSON (gestion des caractères spéciaux)
+    let currentContent = JSON.parse(decodeURIComponent(escape(atob(fileData.content))));
 
-    // S'assurer que c'est un tableau
     if (!Array.isArray(currentContent)) {
       currentContent = [];
     }
@@ -35,31 +33,34 @@ export const POST: APIRoute = async ({ request }) => {
     let updatedContent;
     let commitMessage;
 
-    // 2. LOGIQUE DE MISE À JOUR OU SUPPRESSION
+    // 2. LOGIQUE : SUPPRESSION OU AJOUT
     if (incomingData.action === "DELETE") {
-      // Action : SUPPRIMER
-      updatedContent = currentContent.filter((m: any) => m.id !== incomingData.id);
+      updatedContent = currentContent.filter(m => m.id !== incomingData.id);
       commitMessage = `Admin: Suppression du manga ${incomingData.id}`;
     } else {
-      // Action : AJOUTER (ou mettre à jour si l'ID existe déjà)
-      const index = currentContent.findIndex((m: any) => m.id === incomingData.id);
+      const index = currentContent.findIndex(m => m.id === incomingData.id);
       
       if (index !== -1) {
-        // Si le manga existe déjà, on met à jour ses infos sans toucher aux chapitres existants
+        // Mise à jour sans écraser les chapitres
         currentContent[index] = { 
           ...currentContent[index], 
           ...incomingData,
           chapters: currentContent[index].chapters || [] 
         };
       } else {
-        // Nouveau manga
-        currentContent.push(incomingData);
+        // Nouvel ajout
+        currentContent.push({
+            ...incomingData,
+            chapters: incomingData.chapters || []
+        });
       }
       updatedContent = currentContent;
-      commitMessage = `Admin: Mise à jour/Ajout du manga ${incomingData.title}`;
+      commitMessage = `Admin: Mise à jour/Ajout de ${incomingData.title}`;
     }
 
-    // 3. Renvoyer le fichier mis à jour vers GitHub
+    // 3. Envoi vers GitHub (Encodage propre)
+    const newContentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(updatedContent, null, 2))));
+
     const putFileRes = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,
       {
@@ -70,20 +71,19 @@ export const POST: APIRoute = async ({ request }) => {
         },
         body: JSON.stringify({
           message: commitMessage,
-          content: btoa(unescape(encodeURIComponent(JSON.stringify(updatedContent, null, 2)))),
+          content: newContentBase64,
           sha: sha,
         }),
       }
     );
 
     if (!putFileRes.ok) {
-      const errorText = await putFileRes.text();
-      return new Response(JSON.stringify({ error: "Échec de l'écriture sur GitHub", details: errorText }), { status: 500 });
+      return new Response(JSON.stringify({ error: "Erreur d'écriture GitHub" }), { status: 500 });
     }
 
     return new Response(JSON.stringify({ message: "Succès !" }), { status: 200 });
 
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 };
